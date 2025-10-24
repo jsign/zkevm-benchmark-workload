@@ -119,14 +119,14 @@ ere-io-serde = { git = "https://github.com/eth-applied-research-group/ere", rev 
 
 # branch is kw/zkevm-benchmark-workload-repo
 # NOTE: We are using a branch of a branch that has not yet been merged into master.
-ef-tests = { git = "https://github.com/kevaundray/reth", rev = "5b4c3a6d75de93c3ad5d2c8c2740c63cb7e74afb" }
-reth-ethereum-primitives = { git = "https://github.com/kevaundray/reth", rev = "5b4c3a6d75de93c3ad5d2c8c2740c63cb7e74afb" }
-reth-stateless = { git = "https://github.com/kevaundray/reth", rev = "5b4c3a6d75de93c3ad5d2c8c2740c63cb7e74afb" }
-reth-rpc-api = { git = "https://github.com/kevaundray/reth", rev = "5b4c3a6d75de93c3ad5d2c8c2740c63cb7e74afb" }
-reth-primitives-traits = { git = "https://github.com/kevaundray/reth", rev = "5b4c3a6d75de93c3ad5d2c8c2740c63cb7e74afb" }
-reth-errors = { git = "https://github.com/kevaundray/reth", rev = "5b4c3a6d75de93c3ad5d2c8c2740c63cb7e74afb" }
-reth-trie-common = { git = "https://github.com/kevaundray/reth", rev = "5b4c3a6d75de93c3ad5d2c8c2740c63cb7e74afb" }
-reth-chainspec = { git = "https://github.com/kevaundray/reth", rev = "5b4c3a6d75de93c3ad5d2c8c2740c63cb7e74afb" }
+ef-tests = { git = "https://github.com/jsign/reth", rev = "8daf5595db7017f58e356d856fe6e156ea540008" }
+reth-ethereum-primitives = { git = "https://github.com/jsign/reth", rev = "8daf5595db7017f58e356d856fe6e156ea540008" }
+reth-stateless = { git = "https://github.com/jsign/reth", rev = "8daf5595db7017f58e356d856fe6e156ea540008" }
+reth-rpc-api = { git = "https://github.com/jsign/reth", rev = "8daf5595db7017f58e356d856fe6e156ea540008" }
+reth-primitives-traits = { git = "https://github.com/jsign/reth", rev = "8daf5595db7017f58e356d856fe6e156ea540008" }
+reth-errors = { git = "https://github.com/jsign/reth", rev = "8daf5595db7017f58e356d856fe6e156ea540008" }
+reth-trie-common = { git = "https://github.com/jsign/reth", rev = "8daf5595db7017f58e356d856fe6e156ea540008" }
+reth-chainspec = { git = "https://github.com/jsign/reth", rev = "8daf5595db7017f58e356d856fe6e156ea540008" }
 
 ethrex-guest-program = { git = "https://github.com/lambdaclass/ethrex.git", rev = "cfb805c6c70df1f6172f1982c9ed8952b7399d28", package = "guest_program" }
 ethrex-common = { git = "https://github.com/lambdaclass/ethrex.git", rev = "cfb805c6c70df1f6172f1982c9ed8952b7399d28", default-features = false }

@@ -118,11 +118,11 @@ pub struct RpcBlocksAndWitnesses {
 }
 
 #[async_trait]
-impl WitnessGenerator for RpcBlocksAndWitnesses {
+impl WitnessGenerator<StatelessInput> for RpcBlocksAndWitnesses {
     /// Generates blocks and witnesses based on the configuration.
     ///
     /// Returns either the last N blocks or a specific block with their execution witnesses.
-    async fn generate(&self) -> Result<Vec<BlockAndWitness>> {
+    async fn generate(&self) -> Result<Vec<BlockAndWitness<StatelessInput>>> {
         // If live polling is enabled, we return an error here
         if self.stop.is_some() {
             return Err(anyhow::anyhow!(
@@ -166,7 +166,10 @@ impl RpcBlocksAndWitnesses {
     ///
     /// # Errors
     /// Returns an error if any RPC call fails or if blocks cannot be found.
-    async fn fetch_last_n_blocks(&self, last_n_blocks: usize) -> Result<Vec<BlockAndWitness>> {
+    async fn fetch_last_n_blocks(
+        &self,
+        last_n_blocks: usize,
+    ) -> Result<Vec<BlockAndWitness<StatelessInput>>> {
         if last_n_blocks == 0 {
             return Ok(vec![]);
         }
@@ -236,7 +239,10 @@ impl RpcBlocksAndWitnesses {
     ///
     /// # Errors
     /// Returns an error if the RPC call fails or if the block cannot be found.
-    async fn fetch_specific_block(&self, block_num: u64) -> Result<BlockAndWitness> {
+    async fn fetch_specific_block(
+        &self,
+        block_num: u64,
+    ) -> Result<BlockAndWitness<StatelessInput>> {
         // Fetch the execution witness for the given block
         let witness = DebugApiClient::<()>::debug_execution_witness(
             &self.client,
@@ -280,7 +286,10 @@ impl RpcBlocksAndWitnesses {
     /// # Errors
     ///
     /// Returns an error if any RPC call fails or if blocks cannot be found.
-    async fn fetch_from_block(&self, block_num: u64) -> Result<Vec<BlockAndWitness>> {
+    async fn fetch_from_block(
+        &self,
+        block_num: u64,
+    ) -> Result<Vec<BlockAndWitness<StatelessInput>>> {
         let latest_block = EthApiClient::<TransactionRequest, Transaction, Block, Receipt, Header>::block_by_number(
             &self.client,
             BlockNumberOrTag::Latest,
@@ -380,7 +389,7 @@ impl RpcBlocksAndWitnesses {
     /// # Errors
     ///
     /// Returns an error if serialization fails or if any file cannot be written.
-    fn save_to_path(&self, bws: &[BlockAndWitness], path: &Path) -> Result<()> {
+    fn save_to_path(&self, bws: &[BlockAndWitness<StatelessInput>], path: &Path) -> Result<()> {
         for bw in bws {
             let output_path = path.join(format!("{}.json", bw.name));
             let output_data = serde_json::to_string_pretty(&bw)

@@ -85,7 +85,7 @@ async fn main() -> Result<()> {
             .with_context(|| format!("Failed to create output folder: {:?}", cli.output_folder))?;
     }
 
-    let generator: Box<dyn WitnessGenerator> = build_generator(cli.source).await?;
+    let generator: Box<dyn WitnessGenerator<StatelessInput>> = build_generator(cli.source).await?;
 
     info!("Generating fixtures...");
     let count = generator
@@ -98,7 +98,9 @@ async fn main() -> Result<()> {
     Ok(())
 }
 
-async fn build_generator(source: SourceCommand) -> Result<Box<dyn WitnessGenerator>> {
+async fn build_generator(
+    source: SourceCommand,
+) -> Result<Box<dyn WitnessGenerator<StatelessInput>>> {
     match source {
         SourceCommand::Tests {
             tag,

@@ -1,10 +1,17 @@
 //! Generate fixtures for zkEVM benchmarking tool
 
+use alloy_genesis::ChainConfig;
 use anyhow::{Context, Result, anyhow, bail};
 use async_trait::async_trait;
-use ef_tests::{Case, cases::blockchain_test::BlockchainTestCase, models::BlockchainTest};
+use ef_tests::{
+    Case,
+    cases::blockchain_test::{BlockchainTestCase, ExecutionWitnesses},
+    models::BlockchainTest,
+};
 use rayon::prelude::*;
 use reth_chainspec::ChainSpec;
+use reth_ethereum_primitives::Block;
+use serde::Serialize;
 use std::{
     path::{Path, PathBuf},
     process::Command,
@@ -13,7 +20,7 @@ use tracing::error;
 use walkdir::{DirEntry, WalkDir};
 
 use crate::{BlockAndWitness, blocks_and_witnesses::WitnessGenerator};
-use reth_stateless::StatelessInput;
+use reth_stateless::{StatelessExecutionInput, StatelessInput};
 
 /// Witness generator that produces `BlockAndWitness` fixtures for execution-spec-test fixtures.
 #[derive(Debug, Clone, Default)]
@@ -63,7 +70,7 @@ impl ExecSpecTestBlocksAndWitnessBuilder {
     }
 
     /// Builds the `ExecSpecTestBlocksAndWitnesses` instance.
-    pub fn build(self) -> Result<ExecSpecTestBlocksAndWitnesses> {
+    pub fn build<WS: WitnessesSelector>(self) -> Result<ExecSpecTestBlocksAndWitnesses<WS>> {
         let input_folder = self.input_folder;
         let tag = self.tag;
         let include = self.include.unwrap_or_default();
@@ -94,20 +101,23 @@ impl ExecSpecTestBlocksAndWitnessBuilder {
             include,
             exclude,
             delete_eest_folder,
+            _marker: std::marker::PhantomData,
         })
     }
 }
 
 /// Witness generator that produces `BlockAndWitness` fixtures for EEST fixtures.
 #[derive(Debug, Clone)]
-pub struct ExecSpecTestBlocksAndWitnesses {
+pub struct ExecSpecTestBlocksAndWitnesses<WS: WitnessesSelector> {
     directory_path: PathBuf,
     include: Vec<String>,
     exclude: Vec<String>,
     delete_eest_folder: bool,
+
+    _marker: std::marker::PhantomData<WS>,
 }
 
-impl Drop for ExecSpecTestBlocksAndWitnesses {
+impl<WS: WitnessesSelector> Drop for ExecSpecTestBlocksAndWitnesses<WS> {
     fn drop(&mut self) {
         if self.delete_eest_folder && self.directory_path.exists() {
             match std::fs::remove_dir_all(&self.directory_path) {
@@ -122,11 +132,59 @@ impl Drop for ExecSpecTestBlocksAndWitnesses {
     }
 }
 
+trait WitnessesSelector: Send + Sync {
+    type Target: Serialize + Send + Sync;
+
+    fn select_witness(
+        block: Block,
+        witnesses: ExecutionWitnesses,
+        chain_config: ChainConfig,
+    ) -> Self::Target;
+}
+
+#[derive(Debug)]
+pub struct TrieWitnessSelector;
+
+impl WitnessesSelector for TrieWitnessSelector {
+    type Target = StatelessInput;
+
+    fn select_witness(
+        block: Block,
+        witnesses: ExecutionWitnesses,
+        chain_config: ChainConfig,
+    ) -> StatelessInput {
+        StatelessInput {
+            block,
+            witness: witnesses.trie,
+            chain_config,
+        }
+    }
+}
+
+#[derive(Debug)]
+pub struct FlatWitnessSelector;
+
+impl WitnessesSelector for FlatWitnessSelector {
+    type Target = StatelessExecutionInput;
+
+    fn select_witness(
+        block: Block,
+        witnesses: ExecutionWitnesses,
+        chain_config: ChainConfig,
+    ) -> StatelessExecutionInput {
+        StatelessExecutionInput {
+            block,
+            witness: witnesses.flatdb,
+            chain_config,
+        }
+    }
+}
+
 #[async_trait]
-impl WitnessGenerator for ExecSpecTestBlocksAndWitnesses {
+impl<WS: WitnessesSelector> WitnessGenerator<WS::Target> for ExecSpecTestBlocksAndWitnesses<WS> {
     // Generates blocks and witnesses from the EEST fixtures located in the specified directory,
     // filtering by the provided include and exclude patterns.
-    async fn generate(&self) -> Result<Vec<BlockAndWitness>> {
+    async fn generate(&self) -> Result<Vec<BlockAndWitness<WS::Target>>> {
         let suite_path = self.directory_path.join("fixtures/blockchain_tests");
 
         if !suite_path.exists() {
@@ -163,15 +221,12 @@ impl WitnessGenerator for ExecSpecTestBlocksAndWitnesses {
             .map(|(name, case)| {
                 let chain_spec: ChainSpec = case.network.into();
                 let chain_config = chain_spec.genesis.config;
-                let (recovered_block, witness) = BlockchainTestCase::run_single_case(name, case)?
+                let (recovered_block, witnesses) = BlockchainTestCase::run_single_case(name, case)?
                     .into_iter()
                     .next_back()
                     .ok_or_else(|| anyhow!("No target block found for test case {name}"))?;
-                let block_and_witness = StatelessInput {
-                    block: recovered_block.into_block(),
-                    witness,
-                    chain_config,
-                };
+                let block_and_witness =
+                    WS::select_witness(recovered_block.into_block(), witnesses, chain_config);
                 let success = case
                     .blocks
                     .iter()
@@ -232,6 +287,7 @@ fn find_all_files_with_extension(path: &Path, extension: &str) -> Vec<PathBuf> {
 mod tests {
     use flate2::bufread::GzDecoder;
     use tar::Archive;
+    use tempfile::TempDir;
 
     use super::*;
     use std::{fs::File, str::FromStr};
@@ -272,7 +328,7 @@ mod tests {
 
         let wg = ExecSpecTestBlocksAndWitnessBuilder::default()
             .with_input_folder(target_path.to_path_buf())?
-            .build()?;
+            .build::<TrieWitnessSelector>()?;
 
         let bws = wg.generate().await?;
 
@@ -305,7 +361,7 @@ mod tests {
         let bw_with_include = ExecSpecTestBlocksAndWitnessBuilder::default()
             .with_input_folder(target_path.to_path_buf())?
             .with_includes(vec!["Prague".to_string()])
-            .build()?
+            .build::<TrieWitnessSelector>()?
             .generate()
             .await?;
         assert_eq!(
@@ -321,7 +377,7 @@ mod tests {
         let bw_with_exclude = ExecSpecTestBlocksAndWitnessBuilder::default()
             .with_input_folder(target_path.to_path_buf())?
             .with_excludes(vec!["Prague".to_string()])
-            .build()?
+            .build::<TrieWitnessSelector>()?
             .generate()
             .await?;
         assert_eq!(
@@ -345,7 +401,7 @@ mod tests {
 
         let wg = ExecSpecTestBlocksAndWitnessBuilder::default()
             .with_input_folder(target_path.to_path_buf())?
-            .build()?;
+            .build::<TrieWitnessSelector>()?;
 
         let generation_dir = tempfile::tempdir()?;
         let generation_path = generation_dir.path();
@@ -373,7 +429,7 @@ mod tests {
         let mut bw = ExecSpecTestBlocksAndWitnessBuilder::default()
             .with_input_folder(target_path.join("zkevm-fixtures"))?
             .with_includes(vec!["Prague".to_string()])
-            .build()?;
+            .build::<TrieWitnessSelector>()?;
 
         let generated = bw.generate().await?;
         assert!(
@@ -402,7 +458,7 @@ mod tests {
 
         let wg = ExecSpecTestBlocksAndWitnessBuilder::default()
             .with_input_folder(path)?
-            .build()?;
+            .build::<TrieWitnessSelector>()?;
 
         let generated = wg.generate().await?;
 

@@ -1,10 +1,26 @@
+use std::path::PathBuf;
 use std::{fs, io, path::Path};
 
-use anyhow::Result;
+use alloy_genesis::ChainConfig;
+use anyhow::anyhow;
+use anyhow::{Context, Result, bail};
 use async_trait::async_trait;
-use reth_stateless::StatelessInput;
+use ef_tests::{
+    Case,
+    cases::blockchain_test::{BlockchainTestCase, ExecutionWitnesses},
+    models::BlockchainTest,
+};
+use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
+use reth_chainspec::ChainSpec;
+use reth_ethereum_primitives::Block;
+use reth_primitives_traits::RecoveredBlock;
+use reth_stateless::{StatelessExecutionInput, StatelessInput};
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
+use walkdir::{DirEntry, WalkDir};
+
+pub type BlockAndTrieWitness = BlockAndWitness<StatelessInput>;
+pub type BlockAndFlatWitness = BlockAndWitness<StatelessExecutionInput>;
 
 /// Represents a named collection of block/witness pairs for a specific Ethereum test case.
 ///
@@ -12,11 +28,11 @@ use thiserror::Error;
 /// `ethereum/tests` fixtures (however we are using `zkevm-fixtures`)
 ///  containing all the sequential block transitions within that test.
 #[derive(Debug, Serialize, Deserialize)]
-pub struct BlockAndWitness {
+pub struct BlockAndWitness<T> {
     /// Name of the blockchain test case (e.g., "`ModExpAttackContract`").
     pub name: String,
     /// The block and witness pair for the test case.
-    pub block_and_witness: StatelessInput,
+    pub block_and_witness: T,
     /// Whether the stateless block validation is successful.
     pub success: bool,
 }
@@ -33,7 +49,7 @@ pub enum BwError {
     Io(#[from] io::Error),
 }
 
-impl BlockAndWitness {
+impl<T: Serialize + for<'de> Deserialize<'de>> BlockAndWitness<T> {
     /// Serializes a list of `BlockAndWitness` test cases to a JSON pretty-printed string.
     ///
     /// # Errors
@@ -89,25 +105,26 @@ impl BlockAndWitness {
 /// Implementors of this trait provide different strategies for generating
 /// `BlocksAndWitnesses` collections, such as from test fixtures or RPC endpoints.
 #[async_trait]
-pub trait WitnessGenerator {
-    /// Generates `BlockAndWitness` fixtures.
-    ///
-    /// # Errors
-    ///
-    /// Returns an error if the generation process fails, including network issues,
-    /// file I/O problems, or data processing errors.
-    async fn generate(&self) -> Result<Vec<BlockAndWitness>>;
+pub trait WitnessGenerator<T>
+where
+    T: Serialize + Send + Sync,
+{
+    // Generates blocks and witnesses from the EEST fixtures located in the specified directory,
+    // filtering by the provided include and exclude patterns.
+    async fn generate(&self) -> Result<Vec<BlockAndWitness<T>>>;
 
-    /// Generates `BlockAndWitness` fixtures and writes them to the specified path.
+    /// Generates `BlockAndWitness` fixtures from EEST test cases and writes them to the specified path.
+    ///
+    /// This method processes all matching EEST test cases, generates the corresponding
+    /// witness data, and writes each fixture as a separate JSON file in the output directory.
     ///
     /// # Arguments
-    /// * `path` - The directory path where fixture files will be written
+    /// * `path` - The directory path where JSON fixture files will be written
     ///
     /// # Returns
     /// The number of fixture files successfully generated and written
     ///
     /// # Errors
-    ///
-    /// Returns an error if the generation fails or if writing to the path fails.
+    /// Returns an error if fixture generation fails, serialization fails, or file writing fails.
     async fn generate_to_path(&self, path: &Path) -> Result<usize>;
 }

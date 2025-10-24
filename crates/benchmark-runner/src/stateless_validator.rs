@@ -70,7 +70,7 @@ pub fn stateless_validator_inputs(
 }
 
 /// Reads the benchmark fixtures folder and returns a list of block and witness pairs.
-pub fn read_benchmark_fixtures_folder(path: &Path) -> Result<Vec<BlockAndWitness>> {
+pub fn read_benchmark_fixtures_folder(path: &Path) -> Result<Vec<BlockAndWitness<StatelessInput>>> {
     WalkDir::new(path)
         .min_depth(1)
         .into_iter()
@@ -79,15 +79,16 @@ pub fn read_benchmark_fixtures_folder(path: &Path) -> Result<Vec<BlockAndWitness
         .map(|entry| {
             if entry.file_type().is_file() {
                 let content = std::fs::read(entry.path())?;
-                let bw: BlockAndWitness = serde_json::from_slice(&content).map_err(|e| {
-                    anyhow::anyhow!("Failed to parse {}: {}", entry.path().display(), e)
-                })?;
+                let bw: BlockAndWitness<StatelessInput> = serde_json::from_slice(&content)
+                    .map_err(|e| {
+                        anyhow::anyhow!("Failed to parse {}: {}", entry.path().display(), e)
+                    })?;
                 Ok(bw)
             } else {
                 anyhow::bail!("Invalid input folder structure: expected files only")
             }
         })
-        .collect::<Result<Vec<BlockAndWitness>>>()
+        .collect::<Result<Vec<BlockAndWitness<StatelessInput>>>>()
 }
 
 /// Verifies the output of the program.
