@@ -8,9 +8,10 @@ use std::path::PathBuf;
 use tokio_util::sync::CancellationToken;
 use tracing::info;
 use tracing_subscriber::EnvFilter;
+use reth_stateless::{StatelessExecutionInput, StatelessInput};
 use witness_generator::{
-    StatelessInput, WitnessGenerator,
-    eest_generator::{ExecSpecTestBlocksAndWitnessBuilder, TrieWitnessSelector},
+    WitnessGenerator,
+    eest_generator::{ExecSpecTestBlocksAndWitnessBuilder, FlatWitnessSelector, TrieWitnessSelector},
     rpc_generator::{RpcBlocksAndWitnessesBuilder, RpcFlatHeaderKeyValues},
 };
 
@@ -22,6 +23,9 @@ struct Cli {
     /// Output folder for generated fixtures
     #[arg(short, long, default_value = "zkevm-fixtures-input")]
     output_folder: PathBuf,
+
+    #[arg(short, long)]
+    witness_type: WitnessType,
 
     /// Source of blocks and witnesses
     #[command(subcommand)]
@@ -47,9 +51,6 @@ enum SourceCommand {
         /// Optional input folder for EEST files. If not provided, the tag rule will be used.
         #[arg(long, conflicts_with = "tag")]
         eest_fixtures_path: Option<PathBuf>,
-
-        #[arg(short, long)]
-        witness_type: WitnessType,
     },
     /// Generate fixtures from an RPC endpoint
     Rpc {
@@ -82,6 +83,11 @@ enum WitnessType {
     Flat,
 }
 
+enum Generator {
+    Trie(Box<dyn WitnessGenerator<StatelessInput>>),
+    Flat(Box<dyn WitnessGenerator<StatelessExecutionInput>>),
+}
+
 #[tokio::main]
 async fn main() -> Result<()> {
     tracing_subscriber::fmt()
@@ -95,13 +101,19 @@ async fn main() -> Result<()> {
             .with_context(|| format!("Failed to create output folder: {:?}", cli.output_folder))?;
     }
 
-    let generator: Box<dyn WitnessGenerator<StatelessInput>> = build_generator(cli.source).await?;
+    let generator = build_generator(cli.source, cli.witness_type).await?;
 
     info!("Generating fixtures...");
-    let count = generator
-        .generate_to_path(&cli.output_folder)
-        .await
-        .context("Failed to generate blocks and witnesses")?;
+    let count = match generator {
+        Generator::Trie(g) => g
+            .generate_to_path(&cli.output_folder)
+            .await
+            .context("Failed to generate blocks and witnesses")?,
+        Generator::Flat(g) => g
+            .generate_to_path(&cli.output_folder)
+            .await
+            .context("Failed to generate blocks and witnesses")?,
+    };
 
     info!("Generated {} blocks and witnesses", count);
 
@@ -110,14 +122,14 @@ async fn main() -> Result<()> {
 
 async fn build_generator(
     source: SourceCommand,
-) -> Result<Box<dyn WitnessGenerator<StatelessInput>>> {
+    witness_type: WitnessType,
+) -> Result<Generator> {
     match source {
         SourceCommand::Tests {
             tag,
             include,
             exclude,
             eest_fixtures_path,
-            witness_type,
         } => {
             let mut builder = ExecSpecTestBlocksAndWitnessBuilder::default();
 
@@ -134,11 +146,18 @@ async fn build_generator(
                 builder = builder.with_excludes(exclude);
             }
 
-            Ok(Box::new(
-                builder
-                    .build::<TrieWitnessSelector>()
-                    .context("Failed to build EEST generator")?,
-            ))
+            match witness_type {
+                WitnessType::Trie => Ok(Generator::Trie(Box::new(
+                    builder
+                        .build::<TrieWitnessSelector>()
+                        .context("Failed to build EEST generator")?,
+                ))),
+                WitnessType::Flat => Ok(Generator::Flat(Box::new(
+                    builder
+                        .build::<FlatWitnessSelector>()
+                        .context("Failed to build EEST generator")?,
+                ))),
+            }
         }
         SourceCommand::Rpc {
             last_n_blocks,
@@ -147,6 +166,13 @@ async fn build_generator(
             rpc_header,
             follow: listen,
         } => {
+            // RPC generator only supports Trie witnesses
+            if !matches!(witness_type, WitnessType::Trie) {
+                return Err(anyhow!(
+                    "RPC source only supports Trie witness type. Flat witnesses are not available for RPC."
+                ));
+            }
+
             let mut builder = RpcBlocksAndWitnessesBuilder::new(rpc_url);
 
             if let Some(rpc_header) = rpc_header {
@@ -178,12 +204,12 @@ async fn build_generator(
                 builder = builder.last_n_blocks(n_blocks);
             }
 
-            Ok(Box::new(
+            Ok(Generator::Trie(Box::new(
                 builder
                     .build()
                     .await
                     .context("Failed to build RPC generator")?,
-            ))
+            )))
         }
     }
 }

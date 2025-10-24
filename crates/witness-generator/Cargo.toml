@@ -25,7 +25,6 @@ alloy-rpc-types-eth.workspace = true
 ef-tests.workspace = true
 reth-stateless.workspace = true
 reth-chainspec.workspace = true
-reth-primitives-traits.workspace = true
 reth-ethereum-primitives = { workspace = true, features = [
     "serde",
     "serde-bincode-compat",

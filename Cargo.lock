@@ -10193,7 +10193,6 @@ dependencies = [
  "rayon",
  "reth-chainspec",
  "reth-ethereum-primitives",
- "reth-primitives-traits",
  "reth-rpc-api",
  "reth-stateless",
  "serde",
@@ -10213,6 +10212,7 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "clap",
+ "reth-stateless",
  "tokio",
  "tokio-util",
  "tracing",

@@ -1,26 +1,9 @@
-use std::path::PathBuf;
 use std::{fs, io, path::Path};
 
-use alloy_genesis::ChainConfig;
-use anyhow::anyhow;
-use anyhow::{Context, Result, bail};
+use anyhow::Result;
 use async_trait::async_trait;
-use ef_tests::{
-    Case,
-    cases::blockchain_test::{BlockchainTestCase, ExecutionWitnesses},
-    models::BlockchainTest,
-};
-use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
-use reth_chainspec::ChainSpec;
-use reth_ethereum_primitives::Block;
-use reth_primitives_traits::RecoveredBlock;
-use reth_stateless::{StatelessExecutionInput, StatelessInput};
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
-use walkdir::{DirEntry, WalkDir};
-
-pub type BlockAndTrieWitness = BlockAndWitness<StatelessInput>;
-pub type BlockAndFlatWitness = BlockAndWitness<StatelessExecutionInput>;
 
 /// Represents a named collection of block/witness pairs for a specific Ethereum test case.
 ///
