@@ -3,15 +3,17 @@
 #![cfg_attr(not(test), warn(unused_crate_dependencies))]
 
 use anyhow::{Context, Result, anyhow};
-use clap::{Parser, Subcommand};
+use clap::{Parser, Subcommand, ValueEnum};
+use reth_stateless::{StatelessExecutionInput, StatelessInput};
 use std::path::PathBuf;
 use tokio_util::sync::CancellationToken;
 use tracing::info;
 use tracing_subscriber::EnvFilter;
-use reth_stateless::{StatelessExecutionInput, StatelessInput};
 use witness_generator::{
     WitnessGenerator,
-    eest_generator::{ExecSpecTestBlocksAndWitnessBuilder, FlatWitnessSelector, TrieWitnessSelector},
+    eest_generator::{
+        ExecSpecTestBlocksAndWitnessBuilder, FlatWitnessSelector, TrieWitnessSelector,
+    },
     rpc_generator::{RpcBlocksAndWitnessesBuilder, RpcFlatHeaderKeyValues},
 };
 
@@ -24,7 +26,7 @@ struct Cli {
     #[arg(short, long, default_value = "zkevm-fixtures-input")]
     output_folder: PathBuf,
 
-    #[arg(short, long)]
+    #[arg(short, long, default_value = "trie")]
     witness_type: WitnessType,
 
     /// Source of blocks and witnesses
@@ -76,9 +78,8 @@ enum SourceCommand {
     },
 }
 
-#[derive(clap::ValueEnum, Clone, Debug, Default)]
+#[derive(ValueEnum, Clone, Debug)]
 enum WitnessType {
-    #[default]
     Trie,
     Flat,
 }
@@ -120,10 +121,7 @@ async fn main() -> Result<()> {
     Ok(())
 }
 
-async fn build_generator(
-    source: SourceCommand,
-    witness_type: WitnessType,
-) -> Result<Generator> {
+async fn build_generator(source: SourceCommand, witness_type: WitnessType) -> Result<Generator> {
     match source {
         SourceCommand::Tests {
             tag,
