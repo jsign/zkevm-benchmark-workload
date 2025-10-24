@@ -101,30 +101,14 @@ impl<T: Serialize + for<'de> Deserialize<'de>> BlockAndWitness<T> {
 }
 
 /// Trait for generating blocks and witnesses.
-///
-/// Implementors of this trait provide different strategies for generating
-/// `BlocksAndWitnesses` collections, such as from test fixtures or RPC endpoints.
 #[async_trait]
 pub trait WitnessGenerator<T>
 where
     T: Serialize + Send + Sync,
 {
-    // Generates blocks and witnesses from the EEST fixtures located in the specified directory,
-    // filtering by the provided include and exclude patterns.
+    /// Generate the collection of `BlockAndWitness` instances.
     async fn generate(&self) -> Result<Vec<BlockAndWitness<T>>>;
 
-    /// Generates `BlockAndWitness` fixtures from EEST test cases and writes them to the specified path.
-    ///
-    /// This method processes all matching EEST test cases, generates the corresponding
-    /// witness data, and writes each fixture as a separate JSON file in the output directory.
-    ///
-    /// # Arguments
-    /// * `path` - The directory path where JSON fixture files will be written
-    ///
-    /// # Returns
-    /// The number of fixture files successfully generated and written
-    ///
-    /// # Errors
-    /// Returns an error if fixture generation fails, serialization fails, or file writing fails.
+    /// Generate the collection and write it to the specified path as JSON.
     async fn generate_to_path(&self, path: &Path) -> Result<usize>;
 }

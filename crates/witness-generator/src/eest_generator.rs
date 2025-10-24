@@ -132,9 +132,12 @@ impl<WS: WitnessesSelector> Drop for ExecSpecTestBlocksAndWitnesses<WS> {
     }
 }
 
-trait WitnessesSelector: Send + Sync {
+/// Trait for selecting witnesses from execution-spec-test cases.
+pub trait WitnessesSelector: Send + Sync {
+    /// The target type produced by the witness selector.
     type Target: Serialize + Send + Sync;
 
+    /// Selects the appropriate witness type from the provided execution witnesses.
     fn select_witness(
         block: Block,
         witnesses: ExecutionWitnesses,
@@ -142,6 +145,7 @@ trait WitnessesSelector: Send + Sync {
     ) -> Self::Target;
 }
 
+/// Selects trie-based witnesses for stateless execution.
 #[derive(Debug)]
 pub struct TrieWitnessSelector;
 
@@ -161,6 +165,7 @@ impl WitnessesSelector for TrieWitnessSelector {
     }
 }
 
+/// Selects flatdb based witnesses for stateless execution.
 #[derive(Debug)]
 pub struct FlatWitnessSelector;
 
@@ -287,7 +292,6 @@ fn find_all_files_with_extension(path: &Path, extension: &str) -> Vec<PathBuf> {
 mod tests {
     use flate2::bufread::GzDecoder;
     use tar::Archive;
-    use tempfile::TempDir;
 
     use super::*;
     use std::{fs::File, str::FromStr};
