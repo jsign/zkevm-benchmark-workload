@@ -9,3 +9,5 @@ pub mod eest_generator;
 pub mod rpc_generator;
 
 pub use blocks_and_witnesses::{BlockAndWitness, BwError, WitnessGenerator};
+
+pub use reth_stateless::StatelessInput;

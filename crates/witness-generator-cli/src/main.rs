@@ -9,8 +9,8 @@ use tokio_util::sync::CancellationToken;
 use tracing::info;
 use tracing_subscriber::EnvFilter;
 use witness_generator::{
-    WitnessGenerator,
-    eest_generator::ExecSpecTestBlocksAndWitnessBuilder,
+    StatelessInput, WitnessGenerator,
+    eest_generator::{ExecSpecTestBlocksAndWitnessBuilder, TrieWitnessSelector},
     rpc_generator::{RpcBlocksAndWitnessesBuilder, RpcFlatHeaderKeyValues},
 };
 
@@ -124,7 +124,9 @@ async fn build_generator(
             }
 
             Ok(Box::new(
-                builder.build().context("Failed to build EEST generator")?,
+                builder
+                    .build::<TrieWitnessSelector>()
+                    .context("Failed to build EEST generator")?,
             ))
         }
         SourceCommand::Rpc {

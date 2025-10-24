@@ -8,7 +8,8 @@ mod tests {
     use std::{env, path::PathBuf};
     use tempfile::{tempdir, TempDir};
     use witness_generator::{
-        eest_generator::ExecSpecTestBlocksAndWitnessBuilder, WitnessGenerator,
+        eest_generator::{ExecSpecTestBlocksAndWitnessBuilder, TrieWitnessSelector},
+        WitnessGenerator,
     };
 
     use crate::utils::{
@@ -110,7 +111,7 @@ mod tests {
             ExecSpecTestBlocksAndWitnessBuilder::default()
                 .with_input_folder(eest_fixtures_path)
                 .unwrap()
-                .build()
+                .build::<TrieWitnessSelector>()
                 .unwrap()
                 .generate_to_path(bench_fixtures_dir.path())
                 .await
@@ -144,7 +145,7 @@ mod tests {
             ExecSpecTestBlocksAndWitnessBuilder::default()
                 .with_input_folder(eest_fixtures_path)
                 .unwrap()
-                .build()
+                .build::<TrieWitnessSelector>()
                 .unwrap()
                 .generate_to_path(bench_fixtures_dir.path())
                 .await
