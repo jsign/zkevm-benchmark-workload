@@ -47,6 +47,9 @@ enum SourceCommand {
         /// Optional input folder for EEST files. If not provided, the tag rule will be used.
         #[arg(long, conflicts_with = "tag")]
         eest_fixtures_path: Option<PathBuf>,
+
+        #[arg(short, long)]
+        witness_type: WitnessType,
     },
     /// Generate fixtures from an RPC endpoint
     Rpc {
@@ -70,6 +73,13 @@ enum SourceCommand {
         #[arg(long)]
         rpc_header: Option<Vec<String>>,
     },
+}
+
+#[derive(clap::ValueEnum, Clone, Debug, Default)]
+enum WitnessType {
+    #[default]
+    Trie,
+    Flat,
 }
 
 #[tokio::main]
@@ -107,6 +117,7 @@ async fn build_generator(
             include,
             exclude,
             eest_fixtures_path,
+            witness_type,
         } => {
             let mut builder = ExecSpecTestBlocksAndWitnessBuilder::default();
 
