@@ -10,6 +10,10 @@ members = [
     "stateless-validator/reth/sp1",
     "stateless-validator/reth/zisk",
 
+
+    # Reth stateless validator execution
+    "stateless-validator-execution/reth/sp1",
+
     # Ethrex stateless validator is not part of the workspace
 
     # Empty program
@@ -206,3 +210,12 @@ reth-errors = { git = "https://github.com/jsign/reth", rev = "01f2296150120c7e87
 reth-trie-common = { git = "https://github.com/jsign/reth", rev = "01f2296150120c7e87f4ed4b65d43ebf8d937526" }
 
 [patch.crates-io]
+sha2-v0-10-9 = { git = "https://github.com/sp1-patches/RustCrypto-hashes", package = "sha2", tag = "patch-sha2-0.10.9-sp1-4.0.0" }
+sha3-v0-10-8 = { git = "https://github.com/sp1-patches/RustCrypto-hashes", package = "sha3", tag = "patch-sha3-0.10.8-sp1-4.0.0" }
+crypto-bigint = { git = "https://github.com/sp1-patches/RustCrypto-bigint", tag = "patch-0.5.5-sp1-4.0.0" }
+tiny-keccak = { git = "https://github.com/sp1-patches/tiny-keccak", tag = "patch-2.0.2-sp1-4.0.0" }
+curve25519-dalek = { git = "https://github.com/sp1-patches/curve25519-dalek", tag = "patch-4.1.3-sp1-5.0.0" }
+k256 = { git = "https://github.com/sp1-patches/elliptic-curves", tag = "patch-k256-13.4-sp1-5.0.0" }
+p256 = { git = "https://github.com/sp1-patches/elliptic-curves", tag = "patch-p256-13.2-sp1-5.0.0" }
+substrate-bn = { git = "https://github.com/sp1-patches/bn", tag = "patch-0.6.0-sp1-5.0.0" }
+ecdsa = { git = "https://github.com/sp1-patches/signatures", tag = "patch-16.9-sp1-4.1.0" }
