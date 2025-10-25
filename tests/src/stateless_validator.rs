@@ -2,7 +2,7 @@
 mod tests {
     use benchmark_runner::{
         runner::Action,
-        stateless_validator::{self, BlockMetadata, ExecutionClient},
+        stateless_validator::{self, BlockMetadata, ExecutionClient, StatelessValidatorMode},
     };
     use ere_dockerized::ErezkVM;
     use std::{env, path::PathBuf};
@@ -76,7 +76,12 @@ mod tests {
                 .join("mainnet-zkevm-fixtures-input");
 
             let output_folder = OutputDir::new().unwrap();
-            let inputs = stateless_validator::stateless_validator_inputs(input_folder, el).unwrap();
+            let inputs = stateless_validator::stateless_validator_inputs(
+                input_folder,
+                el,
+                StatelessValidatorMode::ExecutionAndStorage,
+            )
+            .unwrap();
             let len_inputs = inputs.len();
             assert_eq!(len_inputs, 15);
 
@@ -118,9 +123,12 @@ mod tests {
                 .unwrap();
 
             let output_folder = OutputDir::new().unwrap();
-            let inputs =
-                stateless_validator::stateless_validator_inputs(bench_fixtures_dir.path(), el)
-                    .unwrap();
+            let inputs = stateless_validator::stateless_validator_inputs(
+                bench_fixtures_dir.path(),
+                el,
+                StatelessValidatorMode::ExecutionAndStorage,
+            )
+            .unwrap();
 
             let len_inputs = inputs.len();
             assert_eq!(len_inputs, 1);
@@ -152,9 +160,12 @@ mod tests {
                 .unwrap();
 
             let output_folder = OutputDir::new().unwrap();
-            let inputs =
-                stateless_validator::stateless_validator_inputs(bench_fixtures_dir.path(), *el)
-                    .unwrap();
+            let inputs = stateless_validator::stateless_validator_inputs(
+                bench_fixtures_dir.path(),
+                *el,
+                StatelessValidatorMode::ExecutionAndStorage,
+            )
+            .unwrap();
 
             let len_inputs = inputs.len();
             assert_eq!(len_inputs, 1);

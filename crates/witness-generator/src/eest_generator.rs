@@ -20,7 +20,10 @@ use tracing::error;
 use walkdir::{DirEntry, WalkDir};
 
 use crate::{BlockAndWitness, blocks_and_witnesses::WitnessGenerator};
-use reth_stateless::{StatelessExecutionInput, StatelessInput};
+use reth_stateless::{
+    ExecutionWitness, GenericStatelessInput, StatelessExecutionInput, StatelessInput,
+    flat_witness::FlatExecutionWitness,
+};
 
 /// Witness generator that produces `BlockAndWitness` fixtures for execution-spec-test fixtures.
 #[derive(Debug, Clone, Default)]
@@ -142,7 +145,7 @@ pub trait WitnessesSelector: Send + Sync {
         block: Block,
         witnesses: ExecutionWitnesses,
         chain_config: ChainConfig,
-    ) -> Self::Target;
+    ) -> GenericStatelessInput<Self::Target>;
 }
 
 /// Selects trie-based witnesses for stateless execution.
@@ -150,14 +153,14 @@ pub trait WitnessesSelector: Send + Sync {
 pub struct TrieWitnessSelector;
 
 impl WitnessesSelector for TrieWitnessSelector {
-    type Target = StatelessInput;
+    type Target = ExecutionWitness;
 
     fn select_witness(
         block: Block,
         witnesses: ExecutionWitnesses,
         chain_config: ChainConfig,
-    ) -> StatelessInput {
-        StatelessInput {
+    ) -> GenericStatelessInput<ExecutionWitness> {
+        GenericStatelessInput::<ExecutionWitness> {
             block,
             witness: witnesses.trie,
             chain_config,
@@ -170,14 +173,14 @@ impl WitnessesSelector for TrieWitnessSelector {
 pub struct FlatWitnessSelector;
 
 impl WitnessesSelector for FlatWitnessSelector {
-    type Target = StatelessExecutionInput;
+    type Target = FlatExecutionWitness;
 
     fn select_witness(
         block: Block,
         witnesses: ExecutionWitnesses,
         chain_config: ChainConfig,
-    ) -> StatelessExecutionInput {
-        StatelessExecutionInput {
+    ) -> GenericStatelessInput<FlatExecutionWitness> {
+        GenericStatelessInput::<FlatExecutionWitness> {
             block,
             witness: witnesses.flatdb,
             chain_config,

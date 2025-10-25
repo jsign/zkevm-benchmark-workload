@@ -5,4 +5,6 @@
 extern crate alloc;
 
 pub mod guest;
+pub mod guest_only_execution;
+
 pub mod sdk;

@@ -2,6 +2,7 @@ use std::{fs, io, path::Path};
 
 use anyhow::Result;
 use async_trait::async_trait;
+use reth_stateless::GenericStatelessInput;
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
@@ -15,7 +16,7 @@ pub struct BlockAndWitness<T> {
     /// Name of the blockchain test case (e.g., "`ModExpAttackContract`").
     pub name: String,
     /// The block and witness pair for the test case.
-    pub block_and_witness: T,
+    pub block_and_witness: GenericStatelessInput<T>,
     /// Whether the stateless block validation is successful.
     pub success: bool,
 }

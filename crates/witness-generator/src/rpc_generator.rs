@@ -12,7 +12,7 @@ use jsonrpsee::{
 use reth_chainspec::{Chain, HOLESKY, HOODI, MAINNET, NamedChain, SEPOLIA};
 use reth_ethereum_primitives::TransactionSigned;
 use reth_rpc_api::{DebugApiClient, EthApiClient};
-use reth_stateless::StatelessInput;
+use reth_stateless::{ExecutionWitness, GenericStatelessInput, StatelessInput};
 use std::{path::Path, str::FromStr};
 use tokio_util::sync::CancellationToken;
 
@@ -118,11 +118,11 @@ pub struct RpcBlocksAndWitnesses {
 }
 
 #[async_trait]
-impl WitnessGenerator<StatelessInput> for RpcBlocksAndWitnesses {
+impl WitnessGenerator<ExecutionWitness> for RpcBlocksAndWitnesses {
     /// Generates blocks and witnesses based on the configuration.
     ///
     /// Returns either the last N blocks or a specific block with their execution witnesses.
-    async fn generate(&self) -> Result<Vec<BlockAndWitness<StatelessInput>>> {
+    async fn generate(&self) -> Result<Vec<BlockAndWitness<ExecutionWitness>>> {
         // If live polling is enabled, we return an error here
         if self.stop.is_some() {
             return Err(anyhow::anyhow!(
@@ -169,7 +169,7 @@ impl RpcBlocksAndWitnesses {
     async fn fetch_last_n_blocks(
         &self,
         last_n_blocks: usize,
-    ) -> Result<Vec<BlockAndWitness<StatelessInput>>> {
+    ) -> Result<Vec<BlockAndWitness<ExecutionWitness>>> {
         if last_n_blocks == 0 {
             return Ok(vec![]);
         }
@@ -220,7 +220,7 @@ impl RpcBlocksAndWitnesses {
 
             blocks_and_witnesses.push(BlockAndWitness {
                 name: format!("rpc_block_{block_num}"),
-                block_and_witness: StatelessInput {
+                block_and_witness: GenericStatelessInput::<ExecutionWitness> {
                     block: block.into_consensus(),
                     witness,
                     chain_config: self.chain_config.clone(),
@@ -242,7 +242,7 @@ impl RpcBlocksAndWitnesses {
     async fn fetch_specific_block(
         &self,
         block_num: u64,
-    ) -> Result<BlockAndWitness<StatelessInput>> {
+    ) -> Result<BlockAndWitness<ExecutionWitness>> {
         // Fetch the execution witness for the given block
         let witness = DebugApiClient::<()>::debug_execution_witness(
             &self.client,
@@ -289,7 +289,7 @@ impl RpcBlocksAndWitnesses {
     async fn fetch_from_block(
         &self,
         block_num: u64,
-    ) -> Result<Vec<BlockAndWitness<StatelessInput>>> {
+    ) -> Result<Vec<BlockAndWitness<ExecutionWitness>>> {
         let latest_block = EthApiClient::<TransactionRequest, Transaction, Block, Receipt, Header>::block_by_number(
             &self.client,
             BlockNumberOrTag::Latest,
@@ -389,7 +389,7 @@ impl RpcBlocksAndWitnesses {
     /// # Errors
     ///
     /// Returns an error if serialization fails or if any file cannot be written.
-    fn save_to_path(&self, bws: &[BlockAndWitness<StatelessInput>], path: &Path) -> Result<()> {
+    fn save_to_path(&self, bws: &[BlockAndWitness<ExecutionWitness>], path: &Path) -> Result<()> {
         for bw in bws {
             let output_path = path.join(format!("{}.json", bw.name));
             let output_data = serde_json::to_string_pretty(&bw)

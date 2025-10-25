@@ -36,6 +36,15 @@ pub enum ExecutionClient {
     Ethrex,
 }
 
+/// Stateless validator mode.
+#[derive(Debug)]
+pub enum StatelessValidatorMode {
+    /// Validate both execution and storage.
+    ExecutionAndStorage,
+    /// Validate only execution.
+    OnlyExecution,
+}
+
 /// Extra information about the block being benchmarked
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BlockMetadata {
@@ -43,25 +52,49 @@ pub struct BlockMetadata {
 }
 impl GuestMetadata for BlockMetadata {}
 
-/// Generate inputs for the stateless validator guest program.
+/// Prepares the inputs for the stateless validator benchmark.
 pub fn stateless_validator_inputs(
     input_folder: &Path,
     el: ExecutionClient,
+    mode: StatelessValidatorMode,
 ) -> Result<Vec<GuestIO<BlockMetadata, ProgramOutputVerifier>>> {
-    let guest_inputs = read_benchmark_fixtures_folder(input_folder)?
+    match mode {
+        StatelessValidatorMode::ExecutionAndStorage => {
+            generate_guest_io::<StatelessInputIO>(input_folder, el)
+        }
+        StatelessValidatorMode::OnlyExecution => {
+            todo!("OnlyExecution mode is not yet implemented")
+        }
+    }
+}
+
+trait WitnessTypeIO {
+    type Witness: for<'de> Deserialize<'de> + Send;
+
+    fn get_input(bw: &BlockAndWitness<Self::Witness>, el: &ExecutionClient) -> Result<Vec<u8>>;
+}
+
+fn generate_guest_io<WitnessIO: WitnessTypeIO>(
+    input_folder: &Path,
+    el: ExecutionClient,
+) -> Result<Vec<GuestIO<BlockMetadata, ProgramOutputVerifier>>> {
+    let guest_inputs = read_benchmark_fixtures_folder::<WitnessIO::Witness>(input_folder)?
         .into_iter()
         .map(|bw| {
+            let input = WitnessIO::get_input(&bw, &el)?;
+            let metadata = BlockMetadata {
+                block_used_gas: bw.block_and_witness.block.gas_used,
+            };
+            let output = ProgramOutputVerifier {
+                block_hash: bw.block_and_witness.block.hash_slow().0,
+                parent_hash: bw.block_and_witness.block.parent_hash.0,
+                success: bw.success,
+            };
             Ok(GuestIO {
                 name: bw.name,
-                input: get_input(&bw.block_and_witness, &el)?,
-                metadata: BlockMetadata {
-                    block_used_gas: bw.block_and_witness.block.gas_used,
-                },
-                output: ProgramOutputVerifier {
-                    block_hash: bw.block_and_witness.block.hash_slow().0,
-                    parent_hash: bw.block_and_witness.block.parent_hash.0,
-                    success: bw.success,
-                },
+                input,
+                metadata,
+                output,
             })
         })
         .collect::<Result<Vec<_>>>()?;
@@ -70,7 +103,10 @@ pub fn stateless_validator_inputs(
 }
 
 /// Reads the benchmark fixtures folder and returns a list of block and witness pairs.
-pub fn read_benchmark_fixtures_folder(path: &Path) -> Result<Vec<BlockAndWitness<StatelessInput>>> {
+pub fn read_benchmark_fixtures_folder<Witness>(path: &Path) -> Result<Vec<BlockAndWitness<Witness>>>
+where
+    Witness: for<'de> Deserialize<'de> + Send,
+{
     WalkDir::new(path)
         .min_depth(1)
         .into_iter()
@@ -79,8 +115,8 @@ pub fn read_benchmark_fixtures_folder(path: &Path) -> Result<Vec<BlockAndWitness
         .map(|entry| {
             if entry.file_type().is_file() {
                 let content = std::fs::read(entry.path())?;
-                let bw: BlockAndWitness<StatelessInput> = serde_json::from_slice(&content)
-                    .map_err(|e| {
+                let bw: BlockAndWitness<Witness> =
+                    serde_json::from_slice(&content).map_err(|e| {
                         anyhow::anyhow!("Failed to parse {}: {}", entry.path().display(), e)
                     })?;
                 Ok(bw)
@@ -88,7 +124,7 @@ pub fn read_benchmark_fixtures_folder(path: &Path) -> Result<Vec<BlockAndWitness
                 anyhow::bail!("Invalid input folder structure: expected files only")
             }
         })
-        .collect::<Result<Vec<BlockAndWitness<StatelessInput>>>>()
+        .collect()
 }
 
 /// Verifies the output of the program.
@@ -114,25 +150,35 @@ impl OutputVerifier for ProgramOutputVerifier {
     }
 }
 
-fn get_input(si: &StatelessInput, el: &ExecutionClient) -> Result<Vec<u8>> {
-    match el {
-        ExecutionClient::Reth => reth_guest_io::io_serde()
-            .serialize(
-                &reth_guest_io::Input::new(si.clone()).context("Failed to create Reth input")?,
-            )
-            .map_err(|e| anyhow::anyhow!("Reth serialization error: {e}")),
-        ExecutionClient::Ethrex => {
-            let mut rlp_bytes = vec![];
-            si.block.encode(&mut rlp_bytes);
-            let (ethrex_block, _) = Block::decode_unfinished(&rlp_bytes)?;
+struct StatelessInputIO;
+impl WitnessTypeIO for StatelessInputIO {
+    type Witness = StatelessInput;
 
-            let ethrex_program_input = ethrex_guest_program::input::ProgramInput {
-                blocks: vec![ethrex_block],
-                execution_witness: from_reth_witness_to_ethrex_witness(si.block.number, si)?,
-                elasticity_multiplier: 2u64, // NOTE: Ethrex doesn't derive this value from chain config.
-            };
+    fn get_input(bw: &BlockAndWitness<StatelessInput>, el: &ExecutionClient) -> Result<Vec<u8>> {
+        let stateless_input = &bw.block_and_witness.witness;
+        match el {
+            ExecutionClient::Reth => reth_guest_io::io_serde()
+                .serialize(
+                    &reth_guest_io::Input::new(stateless_input.clone())
+                        .context("Failed to create Reth input")?,
+                )
+                .map_err(|e| anyhow::anyhow!("Reth serialization error: {e}")),
+            ExecutionClient::Ethrex => {
+                let mut rlp_bytes = vec![];
+                stateless_input.block.encode(&mut rlp_bytes);
+                let (ethrex_block, _) = Block::decode_unfinished(&rlp_bytes)?;
 
-            Ok(rkyv::to_bytes::<Error>(&ethrex_program_input)?.to_vec())
+                let ethrex_program_input = ethrex_guest_program::input::ProgramInput {
+                    blocks: vec![ethrex_block],
+                    execution_witness: from_reth_witness_to_ethrex_witness(
+                        stateless_input.block.number,
+                        stateless_input,
+                    )?,
+                    elasticity_multiplier: 2u64, // NOTE: Ethrex doesn't derive this value from chain config.
+                };
+
+                Ok(rkyv::to_bytes::<Error>(&ethrex_program_input)?.to_vec())
+            }
         }
     }
 }
