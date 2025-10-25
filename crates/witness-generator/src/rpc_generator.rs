@@ -12,7 +12,7 @@ use jsonrpsee::{
 use reth_chainspec::{Chain, HOLESKY, HOODI, MAINNET, NamedChain, SEPOLIA};
 use reth_ethereum_primitives::TransactionSigned;
 use reth_rpc_api::{DebugApiClient, EthApiClient};
-use reth_stateless::{ExecutionWitness, GenericStatelessInput, StatelessInput};
+use reth_stateless::{ExecutionWitness, GenericStatelessInput};
 use std::{path::Path, str::FromStr};
 use tokio_util::sync::CancellationToken;
 
@@ -264,7 +264,7 @@ impl RpcBlocksAndWitnesses {
 
         let bw = BlockAndWitness {
             name: format!("rpc_block_{block_num}"),
-            block_and_witness: StatelessInput {
+            block_and_witness: GenericStatelessInput::<ExecutionWitness> {
                 block: block.into_consensus(),
                 witness,
                 chain_config: self.chain_config.clone(),

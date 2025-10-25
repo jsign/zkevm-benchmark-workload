@@ -4,9 +4,7 @@
 
 use anyhow::{Context, Result, anyhow};
 use clap::{Parser, Subcommand, ValueEnum};
-use reth_stateless::{
-    ExecutionWitness, StatelessExecutionInput, StatelessInput, flat_witness::FlatExecutionWitness,
-};
+use reth_stateless::{ExecutionWitness, flat_witness::FlatExecutionWitness};
 use std::path::PathBuf;
 use tokio_util::sync::CancellationToken;
 use tracing::info;

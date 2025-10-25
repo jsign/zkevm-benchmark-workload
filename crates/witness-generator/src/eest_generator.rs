@@ -20,10 +20,7 @@ use tracing::error;
 use walkdir::{DirEntry, WalkDir};
 
 use crate::{BlockAndWitness, blocks_and_witnesses::WitnessGenerator};
-use reth_stateless::{
-    ExecutionWitness, GenericStatelessInput, StatelessExecutionInput, StatelessInput,
-    flat_witness::FlatExecutionWitness,
-};
+use reth_stateless::{ExecutionWitness, GenericStatelessInput, flat_witness::FlatExecutionWitness};
 
 /// Witness generator that produces `BlockAndWitness` fixtures for execution-spec-test fixtures.
 #[derive(Debug, Clone, Default)]

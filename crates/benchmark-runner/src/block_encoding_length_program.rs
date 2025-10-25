@@ -6,8 +6,8 @@ use anyhow::*;
 use block_encoding_length_io::{BlockEncodingFormat, Input};
 use ere_dockerized::ErezkVM;
 use ere_io_serde::IoSerde;
+use ethrex_common::types::block_execution_witness::ExecutionWitness;
 use guest_libs::BincodeBlock;
-use reth_stateless::StatelessInput;
 use serde::{Deserialize, Serialize};
 
 use crate::{
@@ -30,7 +30,7 @@ pub fn block_encoding_length_inputs(
     loop_count: u16,
     format: BlockEncodingFormat,
 ) -> Result<Vec<GuestIO<BlockEncodingLengthMetadata, ProgramOutputVerifier>>> {
-    let guest_inputs = read_benchmark_fixtures_folder::<StatelessInput>(input_folder)?
+    let guest_inputs = read_benchmark_fixtures_folder::<ExecutionWitness>(input_folder)?
         .into_iter()
         .map(|bw| {
             let input = Input {

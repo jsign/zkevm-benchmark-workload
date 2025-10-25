@@ -8,15 +8,12 @@ use anyhow::{Context, Result};
 use ere_dockerized::ErezkVM;
 use ere_io_serde::IoSerde;
 use ethrex_common::{
-    types::{
-        block_execution_witness::ExecutionWitness, BlobSchedule, Block, ChainConfig,
-        ForkBlobSchedule,
-    },
+    types::{block_execution_witness, BlobSchedule, Block, ChainConfig, ForkBlobSchedule},
     H160,
 };
 use ethrex_rlp::decode::RLPDecode;
 use rayon::iter::{IntoParallelIterator, ParallelIterator};
-use reth_stateless::StatelessInput;
+use reth_stateless::{ExecutionWitness, GenericStatelessInput};
 use rkyv::rancor::Error;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
@@ -152,28 +149,25 @@ impl OutputVerifier for ProgramOutputVerifier {
 
 struct StatelessInputIO;
 impl WitnessTypeIO for StatelessInputIO {
-    type Witness = StatelessInput;
+    type Witness = ExecutionWitness;
 
-    fn get_input(bw: &BlockAndWitness<StatelessInput>, el: &ExecutionClient) -> Result<Vec<u8>> {
-        let stateless_input = &bw.block_and_witness.witness;
+    fn get_input(bw: &BlockAndWitness<ExecutionWitness>, el: &ExecutionClient) -> Result<Vec<u8>> {
+        let si = &bw.block_and_witness;
         match el {
             ExecutionClient::Reth => reth_guest_io::io_serde()
                 .serialize(
-                    &reth_guest_io::Input::new(stateless_input.clone())
+                    &reth_guest_io::Input::new(si.clone())
                         .context("Failed to create Reth input")?,
                 )
                 .map_err(|e| anyhow::anyhow!("Reth serialization error: {e}")),
             ExecutionClient::Ethrex => {
                 let mut rlp_bytes = vec![];
-                stateless_input.block.encode(&mut rlp_bytes);
+                si.block.encode(&mut rlp_bytes);
                 let (ethrex_block, _) = Block::decode_unfinished(&rlp_bytes)?;
 
                 let ethrex_program_input = ethrex_guest_program::input::ProgramInput {
                     blocks: vec![ethrex_block],
-                    execution_witness: from_reth_witness_to_ethrex_witness(
-                        stateless_input.block.number,
-                        stateless_input,
-                    )?,
+                    execution_witness: from_reth_witness_to_ethrex_witness(si.block.number, si)?,
                     elasticity_multiplier: 2u64, // NOTE: Ethrex doesn't derive this value from chain config.
                 };
 
@@ -185,8 +179,8 @@ impl WitnessTypeIO for StatelessInputIO {
 
 fn from_reth_witness_to_ethrex_witness(
     block_number: u64,
-    si: &StatelessInput,
-) -> Result<ExecutionWitness> {
+    si: &GenericStatelessInput<ExecutionWitness>,
+) -> Result<block_execution_witness::ExecutionWitness> {
     let codes = si.witness.codes.iter().map(|b| b.to_vec()).collect();
     let block_headers_bytes = si.witness.headers.iter().map(|h| h.to_vec()).collect();
 
@@ -253,7 +247,7 @@ fn from_reth_witness_to_ethrex_witness(
 
     let keys = si.witness.keys.iter().map(|k| k.to_vec()).collect();
 
-    Ok(ExecutionWitness {
+    Ok(block_execution_witness::ExecutionWitness {
         codes,
         block_headers_bytes,
         chain_config,
