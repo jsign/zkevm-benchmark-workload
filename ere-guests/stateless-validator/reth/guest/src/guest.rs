@@ -50,7 +50,7 @@ pub fn ethereum_guest<S: SDK>() {
         Ok(block_hash) => {
             let public_inputs = (block_hash.0, parent_hash.0, true);
             let public_inputs_hash: [u8; 32] = Sha256::digest(
-                bincode_v2::serde::encode_to_vec(&public_inputs, bincode_v2::config::legacy())
+                bincode_v2::serde::encode_to_vec(public_inputs, bincode_v2::config::legacy())
                     .unwrap(),
             )
             .into();
@@ -61,7 +61,7 @@ pub fn ethereum_guest<S: SDK>() {
             println!("Block validation failed: {_err}");
             let public_inputs = (header.hash_slow().0, parent_hash.0, false);
             let public_inputs_hash: [u8; 32] = Sha256::digest(
-                bincode_v2::serde::encode_to_vec(&public_inputs, bincode_v2::config::legacy())
+                bincode_v2::serde::encode_to_vec(public_inputs, bincode_v2::config::legacy())
                     .unwrap(),
             )
             .into();
@@ -79,7 +79,7 @@ fn validate_block<S: SDK>(
     evm_config: EthEvmConfig,
 ) -> Result<FixedBytes<32>, Box<dyn Error>> {
     S::cycle_scope(ScopeMarker::Start, "validation");
-    let block_hash = stateless_validation_with_trie::<SparseState, _, _>(
+    let (block_hash, _) = stateless_validation_with_trie::<SparseState, _, _>(
         block,
         public_keys,
         witness,
