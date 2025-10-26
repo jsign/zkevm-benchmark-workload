@@ -19,7 +19,7 @@ use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use strum::{AsRefStr, EnumString};
 use walkdir::WalkDir;
-use witness_generator::BlockAndWitness;
+use witness_generator::StatelessValidationFixture;
 
 use crate::guest_programs::{GuestIO, GuestMetadata, OutputVerifier, OutputVerifierResult};
 
@@ -68,7 +68,10 @@ pub fn stateless_validator_inputs(
 trait WitnessTypeIO {
     type Witness: for<'de> Deserialize<'de> + Send;
 
-    fn get_input(bw: &BlockAndWitness<Self::Witness>, el: &ExecutionClient) -> Result<Vec<u8>>;
+    fn get_input(
+        bw: &StatelessValidationFixture<Self::Witness>,
+        el: &ExecutionClient,
+    ) -> Result<Vec<u8>>;
 }
 
 fn generate_guest_io<WitnessIO: WitnessTypeIO>(
@@ -80,11 +83,11 @@ fn generate_guest_io<WitnessIO: WitnessTypeIO>(
         .map(|bw| {
             let input = WitnessIO::get_input(&bw, &el)?;
             let metadata = BlockMetadata {
-                block_used_gas: bw.block_and_witness.block.gas_used,
+                block_used_gas: bw.stateless_input.block.gas_used,
             };
             let output = ProgramOutputVerifier {
-                block_hash: bw.block_and_witness.block.hash_slow().0,
-                parent_hash: bw.block_and_witness.block.parent_hash.0,
+                block_hash: bw.stateless_input.block.hash_slow().0,
+                parent_hash: bw.stateless_input.block.parent_hash.0,
                 success: bw.success,
             };
             Ok(GuestIO {
@@ -100,7 +103,9 @@ fn generate_guest_io<WitnessIO: WitnessTypeIO>(
 }
 
 /// Reads the benchmark fixtures folder and returns a list of block and witness pairs.
-pub fn read_benchmark_fixtures_folder<Witness>(path: &Path) -> Result<Vec<BlockAndWitness<Witness>>>
+pub fn read_benchmark_fixtures_folder<Witness>(
+    path: &Path,
+) -> Result<Vec<StatelessValidationFixture<Witness>>>
 where
     Witness: for<'de> Deserialize<'de> + Send,
 {
@@ -112,8 +117,8 @@ where
         .map(|entry| {
             if entry.file_type().is_file() {
                 let content = std::fs::read(entry.path())?;
-                let bw: BlockAndWitness<Witness> =
-                    serde_json::from_slice(&content).map_err(|e| {
+                let bw: StatelessValidationFixture<Witness> = serde_json::from_slice(&content)
+                    .map_err(|e| {
                         anyhow::anyhow!("Failed to parse {}: {}", entry.path().display(), e)
                     })?;
                 Ok(bw)
@@ -152,10 +157,10 @@ impl WitnessTypeIO for FlatWitnessIO {
     type Witness = FlatExecutionWitness;
 
     fn get_input(
-        bw: &BlockAndWitness<FlatExecutionWitness>,
+        bw: &StatelessValidationFixture<FlatExecutionWitness>,
         el: &ExecutionClient,
     ) -> Result<Vec<u8>> {
-        let si = &bw.block_and_witness;
+        let si = &bw.stateless_input;
         match el {
             ExecutionClient::Reth => reth_guest_io::io_serde()
                 .serialize(
@@ -174,8 +179,11 @@ struct TrieWitnessIO;
 impl WitnessTypeIO for TrieWitnessIO {
     type Witness = ExecutionWitness;
 
-    fn get_input(bw: &BlockAndWitness<ExecutionWitness>, el: &ExecutionClient) -> Result<Vec<u8>> {
-        let si = &bw.block_and_witness;
+    fn get_input(
+        bw: &StatelessValidationFixture<ExecutionWitness>,
+        el: &ExecutionClient,
+    ) -> Result<Vec<u8>> {
+        let si = &bw.stateless_input;
         match el {
             ExecutionClient::Reth => reth_guest_io::io_serde()
                 .serialize(

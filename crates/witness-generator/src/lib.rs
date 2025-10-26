@@ -1,11 +1,224 @@
 #![doc = include_str!("../README.md")]
 #![cfg_attr(not(test), warn(unused_crate_dependencies))]
 
-/// API definitions for generating blocks and witnesses.
-mod blocks_and_witnesses;
-/// Generate block and witnesses from test fixtures
+use std::{fs, path::Path};
+
+use async_trait::async_trait;
+use reth_stateless::GenericStatelessInput;
+use serde::{Deserialize, Serialize};
+use thiserror::Error;
+
 pub mod eest_generator;
-/// Generate block and witnesses from an RPC endpoint
 pub mod rpc_generator;
 
-pub use blocks_and_witnesses::{BlockAndWitness, BwError, WitnessGenerator};
+/// Error types for witness generation operations.
+#[derive(Debug, Error)]
+pub enum WitnessGeneratorError {
+    /// Error during JSON serialization
+    #[error("failed to serialize fixtures to JSON: {0}")]
+    SerializationError(#[from] serde_json::Error),
+
+    /// Error during file I/O operations
+    #[error("I/O error: {0}")]
+    IoError(#[from] std::io::Error),
+
+    /// Error reading fixtures from file
+    #[error("failed to read fixtures from file at {path}: {source}")]
+    ReadFixtureError {
+        /// Path to the fixture file
+        path: String,
+        /// Underlying I/O error
+        source: std::io::Error,
+    },
+
+    /// Error writing fixtures to file
+    #[error("failed to write fixtures to file: {0}")]
+    WriteFixtureError(std::io::Error),
+
+    /// Error deserializing fixtures from JSON
+    #[error("failed to deserialize fixtures from JSON: {0}")]
+    DeserializationError(serde_json::Error),
+
+    /// EEST fixtures path does not exist
+    #[error("EEST fixtures path '{0}' does not exist")]
+    EestPathNotFound(String),
+
+    /// EEST fixtures path is not a directory
+    #[error("EEST fixtures path '{0}' is not a directory")]
+    EestPathNotDirectory(String),
+
+    /// Failed to resolve path
+    #[error("failed to resolve path '{path}': {source}")]
+    PathResolutionError {
+        /// Path that failed to resolve
+        path: String,
+        /// Underlying I/O error
+        source: std::io::Error,
+    },
+
+    /// Failed to download EEST fixtures
+    #[error("failed to download EEST benchmark fixtures: {0}")]
+    DownloadScriptFailed(String),
+
+    /// Failed to execute download script
+    #[error("failed to execute download script: {0}")]
+    DownloadScriptExecutionError(std::io::Error),
+
+    /// Test suite path does not exist
+    #[error("test suite path does not exist: {0}")]
+    TestSuitePathNotFound(String),
+
+    /// Failed to load test case
+    #[error("failed to load test case from {path}: {source}")]
+    TestCaseLoadError {
+        /// Path to the test case file
+        path: String,
+        /// Underlying error
+        #[source]
+        source: Box<dyn std::error::Error + Send + Sync>,
+    },
+
+    /// No target block found for test case
+    #[error("no target block found for test case {0}")]
+    NoTargetBlock(String),
+
+    /// Test case execution error
+    #[error("test case execution error: {source}")]
+    TestCaseExecutionError {
+        /// Underlying error
+        #[source]
+        source: Box<dyn std::error::Error + Send + Sync>,
+    },
+
+    /// Failed to serialize fixture
+    #[error("failed to serialize fixture '{name}': {source}")]
+    FixtureSerializationError {
+        /// Name of the fixture
+        name: String,
+        /// Underlying serialization error
+        source: serde_json::Error,
+    },
+
+    /// Failed to write fixture to path
+    #[error("failed to write fixture to path '{path}': {source}")]
+    FixtureWriteError {
+        /// Path to write fixture to
+        path: String,
+        /// Underlying I/O error
+        source: std::io::Error,
+    },
+
+    /// RPC error
+    #[error("RPC error: {0}")]
+    RpcError(String),
+
+    /// Failed to fetch chain ID
+    #[error("failed to fetch chain ID from RPC")]
+    ChainIdFetchError,
+
+    /// Unsupported chain
+    #[error("unsupported chain ID: {0}")]
+    UnsupportedChain(u64),
+
+    /// Live polling not supported in generate method
+    #[error("live polling is not supported in generate method. Use generate_to_path instead.")]
+    LivePollingNotSupported,
+
+    /// Failed to fetch latest block
+    #[error("failed to fetch latest block")]
+    LatestBlockFetchError,
+
+    /// No block found for number
+    #[error("no block found for number {0}")]
+    BlockNotFoundForNumber(u64),
+
+    /// No block found for hash
+    #[error("no block found for hash {0}")]
+    BlockNotFoundForHash(String),
+
+    /// Cancellation token required
+    #[error("cancellation token is required for live polling")]
+    CancellationTokenRequired,
+
+    /// Invalid header format
+    #[error("invalid header format: '{header}'. Expected 'key:value'")]
+    InvalidHeaderFormat {
+        /// The invalid header string
+        header: String,
+    },
+
+    /// Invalid header name
+    #[error("invalid header name '{name}': {source}")]
+    InvalidHeaderName {
+        /// The invalid header name
+        name: String,
+        /// Underlying error
+        source: http::header::InvalidHeaderName,
+    },
+
+    /// Invalid header value
+    #[error("invalid header value '{value}': {source}")]
+    InvalidHeaderValue {
+        /// The invalid header value
+        value: String,
+        /// Underlying error
+        source: http::header::InvalidHeaderValue,
+    },
+}
+
+/// Result type alias for witness generation operations.
+pub type Result<T> = std::result::Result<T, WitnessGeneratorError>;
+
+/// Trait for generating stateless validation fixtures.
+#[async_trait]
+pub trait FixtureGenerator<T>
+where
+    T: Serialize + Send + Sync,
+{
+    /// Generates fixtures.
+    async fn generate(&self) -> Result<Vec<StatelessValidationFixture<T>>>;
+
+    /// Generates fixtures and writes them to file.
+    async fn generate_to_path(&self, path: &Path) -> Result<usize>;
+}
+
+/// A stateless validation fixture containing block data and witness information.
+#[derive(Debug, Serialize, Deserialize)]
+pub struct StatelessValidationFixture<T> {
+    /// Name of the blockchain test case (e.g., "`ModExpAttackContract`").
+    pub name: String,
+    /// The stateless input for the block validation.
+    pub stateless_input: GenericStatelessInput<T>,
+    /// Whether the stateless block validation is successful.
+    pub success: bool,
+}
+
+impl<T: Serialize + for<'de> Deserialize<'de>> StatelessValidationFixture<T> {
+    /// Serializes fixtures to pretty-printed JSON.
+    pub fn to_json(items: &[Self]) -> Result<String> {
+        Ok(serde_json::to_string_pretty(items)?)
+    }
+
+    /// Deserializes fixtures from JSON string.
+    pub fn from_json(json: &str) -> Result<Vec<Self>> {
+        serde_json::from_str(json).map_err(WitnessGeneratorError::DeserializationError)
+    }
+
+    /// Serializes fixtures to JSON and writes to file.
+    pub fn to_path<P: AsRef<Path>>(path: P, items: &[Self]) -> Result<()> {
+        let json = Self::to_json(items)?;
+        fs::write(path, json).map_err(WitnessGeneratorError::WriteFixtureError)?;
+        Ok(())
+    }
+
+    /// Reads and deserializes fixtures from file.
+    pub fn from_path<P: AsRef<Path>>(path: P) -> Result<Vec<Self>> {
+        let path = path.as_ref();
+        let contents =
+            fs::read_to_string(path).map_err(|e| WitnessGeneratorError::ReadFixtureError {
+                path: path.display().to_string(),
+                source: e,
+            })?;
+        Self::from_json(&contents)
+    }
+}

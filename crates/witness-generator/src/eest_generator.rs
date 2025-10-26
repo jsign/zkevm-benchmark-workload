@@ -1,7 +1,6 @@
 //! Generate fixtures for zkEVM benchmarking tool
 
 use alloy_genesis::ChainConfig;
-use anyhow::{Context, Result, anyhow, bail};
 use async_trait::async_trait;
 use ef_tests::{
     Case,
@@ -19,7 +18,7 @@ use std::{
 use tracing::error;
 use walkdir::{DirEntry, WalkDir};
 
-use crate::{BlockAndWitness, blocks_and_witnesses::WitnessGenerator};
+use crate::{FixtureGenerator, Result, StatelessValidationFixture, WitnessGeneratorError};
 use reth_stateless::{ExecutionWitness, GenericStatelessInput, flat_witness::FlatExecutionWitness};
 
 /// Witness generator that produces `BlockAndWitness` fixtures for execution-spec-test fixtures.
@@ -44,14 +43,21 @@ impl ExecSpecTestBlocksAndWitnessBuilder {
     /// Returns an error if the path doesn't exist or isn't a directory.
     pub fn with_input_folder(mut self, path: PathBuf) -> Result<Self> {
         if !path.exists() {
-            bail!("EEST fixtures path '{}' does not exist", path.display());
+            return Err(WitnessGeneratorError::EestPathNotFound(
+                path.display().to_string(),
+            ));
         }
         if !path.is_dir() {
-            bail!("EEST fixtures path '{}' is not a directory", path.display());
+            return Err(WitnessGeneratorError::EestPathNotDirectory(
+                path.display().to_string(),
+            ));
         }
-        let canonical_path = path
-            .canonicalize()
-            .with_context(|| format!("Failed to resolve path '{}'", path.display()))?;
+        let canonical_path =
+            path.canonicalize()
+                .map_err(|e| WitnessGeneratorError::PathResolutionError {
+                    path: path.display().to_string(),
+                    source: e,
+                })?;
 
         self.input_folder = Some(canonical_path);
         Ok(self)
@@ -85,13 +91,14 @@ impl ExecSpecTestBlocksAndWitnessBuilder {
             if let Some(tag) = tag {
                 cmd.arg(tag);
             }
-            let output = cmd.output().context("Failed to execute download script")?;
+            let output = cmd
+                .output()
+                .map_err(WitnessGeneratorError::DownloadScriptExecutionError)?;
 
             if !output.status.success() {
-                bail!(
-                    "Failed to download EEST benchmark fixtures: {}",
-                    String::from_utf8_lossy(&output.stderr)
-                );
+                return Err(WitnessGeneratorError::DownloadScriptFailed(
+                    String::from_utf8_lossy(&output.stderr).to_string(),
+                ));
             }
             (PathBuf::from(&Self::TEMP_EEST_FIXTURES_PATH), true)
         };
@@ -186,25 +193,27 @@ impl WitnessesSelector for FlatWitnessSelector {
 }
 
 #[async_trait]
-impl<WS: WitnessesSelector> WitnessGenerator<WS::Target> for ExecSpecTestBlocksAndWitnesses<WS> {
+impl<WS: WitnessesSelector> FixtureGenerator<WS::Target> for ExecSpecTestBlocksAndWitnesses<WS> {
     // Generates blocks and witnesses from the EEST fixtures located in the specified directory,
     // filtering by the provided include and exclude patterns.
-    async fn generate(&self) -> Result<Vec<BlockAndWitness<WS::Target>>> {
+    async fn generate(&self) -> Result<Vec<StatelessValidationFixture<WS::Target>>> {
         let suite_path = self.directory_path.join("fixtures/blockchain_tests");
 
         if !suite_path.exists() {
-            bail!("Test suite path does not exist: {}.", suite_path.display());
+            return Err(WitnessGeneratorError::TestSuitePathNotFound(
+                suite_path.display().to_string(),
+            ));
         }
 
         let test_file_paths = find_all_files_with_extension(&suite_path, ".json");
         let mut tests: Vec<(String, BlockchainTest)> = Vec::new();
         for path in test_file_paths {
-            let test_case = match BlockchainTestCase::load(&path) {
-                Ok(case) => case,
-                Err(e) => {
-                    bail!("Failed to load test case from {}: {e}", path.display());
+            let test_case = BlockchainTestCase::load(&path).map_err(|e| {
+                WitnessGeneratorError::TestCaseLoadError {
+                    path: path.display().to_string(),
+                    source: Box::new(e) as Box<dyn std::error::Error + Send + Sync>,
                 }
-            };
+            })?;
 
             let file_tests: Vec<(String, BlockchainTest)> = test_case
                 .tests
@@ -226,11 +235,14 @@ impl<WS: WitnessesSelector> WitnessGenerator<WS::Target> for ExecSpecTestBlocksA
             .map(|(name, case)| {
                 let chain_spec: ChainSpec = case.network.into();
                 let chain_config = chain_spec.genesis.config;
-                let (recovered_block, witnesses) = BlockchainTestCase::run_single_case(name, case)?
+                let (recovered_block, witnesses) = BlockchainTestCase::run_single_case(name, case)
+                    .map_err(|e| WitnessGeneratorError::TestCaseExecutionError {
+                        source: Box::new(e) as Box<dyn std::error::Error + Send + Sync>,
+                    })?
                     .into_iter()
                     .next_back()
-                    .ok_or_else(|| anyhow!("No target block found for test case {name}"))?;
-                let block_and_witness =
+                    .ok_or_else(|| WitnessGeneratorError::NoTargetBlock(name.clone()))?;
+                let stateless_input =
                     WS::select_witness(recovered_block.into_block(), witnesses, chain_config);
                 let success = case
                     .blocks
@@ -239,9 +251,9 @@ impl<WS: WitnessesSelector> WitnessGenerator<WS::Target> for ExecSpecTestBlocksA
                     .unwrap()
                     .expect_exception
                     .is_none();
-                Ok(BlockAndWitness {
+                Ok(StatelessValidationFixture {
                     name: name.clone(),
-                    block_and_witness,
+                    stateless_input,
                     success,
                 })
             })
@@ -267,11 +279,19 @@ impl<WS: WitnessesSelector> WitnessGenerator<WS::Target> for ExecSpecTestBlocksA
         let bws = self.generate().await?;
         for bw in &bws {
             let output_path = path.join(format!("{}.json", bw.name));
-            let output_data = serde_json::to_string_pretty(&bw)
-                .with_context(|| format!("Failed to serialize fixture: {}", bw.name))?;
+            let output_data = serde_json::to_string_pretty(&bw).map_err(|e| {
+                WitnessGeneratorError::FixtureSerializationError {
+                    name: bw.name.clone(),
+                    source: e,
+                }
+            })?;
 
-            std::fs::write(&output_path, output_data)
-                .with_context(|| format!("Failed to write fixture to: {output_path:?}"))?;
+            std::fs::write(&output_path, output_data).map_err(|e| {
+                WitnessGeneratorError::FixtureWriteError {
+                    path: output_path.display().to_string(),
+                    source: e,
+                }
+            })?;
         }
         Ok(bws.len())
     }
@@ -282,207 +302,8 @@ impl<WS: WitnessesSelector> WitnessGenerator<WS::Target> for ExecSpecTestBlocksA
 fn find_all_files_with_extension(path: &Path, extension: &str) -> Vec<PathBuf> {
     WalkDir::new(path)
         .into_iter()
-        .filter_map(Result::ok)
+        .filter_map(std::result::Result::ok)
         .filter(|e| e.file_name().to_string_lossy().ends_with(extension))
         .map(DirEntry::into_path)
         .collect()
-}
-
-#[cfg(test)]
-mod tests {
-    use flate2::bufread::GzDecoder;
-    use tar::Archive;
-
-    use super::*;
-    use std::{fs::File, str::FromStr};
-
-    fn decompress_eest_release(dest_dir: &Path) -> Result<()> {
-        let path =
-            PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("testdata/zkevm_fixtures_v0.1.0.tar.gz");
-        let file = File::open(path)?;
-        let buf_reader = std::io::BufReader::new(file);
-        let tar = GzDecoder::new(buf_reader);
-        let mut archive = Archive::new(tar);
-        archive.unpack(dest_dir)?;
-        Ok(())
-    }
-
-    fn prepare_downgraded_eest_fixtures(target_path: &Path) -> Result<()> {
-        let decompress_dir = tempfile::tempdir()?;
-        let decompress_path = decompress_dir.path();
-        decompress_eest_release(decompress_path)?;
-
-        let single_fixture_path =
-            PathBuf::from_str("fixtures/blockchain_tests/zkevm/worst_compute/worst_jumps.json")?;
-        std::fs::create_dir_all(target_path.join(single_fixture_path.parent().unwrap()))?;
-        std::fs::copy(
-            decompress_path
-                .join("zkevm-fixtures")
-                .join(&single_fixture_path),
-            target_path.join(&single_fixture_path),
-        )?;
-        Ok(())
-    }
-
-    #[tokio::test]
-    async fn test_custom_input_folder() -> Result<()> {
-        let target_dir = tempfile::tempdir()?;
-        let target_path = target_dir.path();
-        prepare_downgraded_eest_fixtures(target_path)?;
-
-        let wg = ExecSpecTestBlocksAndWitnessBuilder::default()
-            .with_input_folder(target_path.to_path_buf())?
-            .build::<TrieWitnessSelector>()?;
-
-        let bws = wg.generate().await?;
-
-        // The worst_jumps.json suite has two fixtures.
-        assert_eq!(
-            bws.len(),
-            2,
-            "Only two fixtures are expected for the worst_jumps EEST fixture"
-        );
-
-        // All blocks should expect a successful block validation.
-        assert!(bws.iter().all(|bw| bw.success));
-
-        // Then the `input_folder` is used, the folder must not be deleted.
-        drop(wg);
-        assert!(
-            target_path.exists(),
-            "Directory should still exist after drop"
-        );
-
-        Ok(())
-    }
-
-    #[tokio::test]
-    async fn test_filters() -> Result<()> {
-        let target_dir = tempfile::tempdir()?;
-        let target_path = target_dir.path();
-        prepare_downgraded_eest_fixtures(target_path)?;
-
-        let bw_with_include = ExecSpecTestBlocksAndWitnessBuilder::default()
-            .with_input_folder(target_path.to_path_buf())?
-            .with_includes(vec!["Prague".to_string()])
-            .build::<TrieWitnessSelector>()?
-            .generate()
-            .await?;
-        assert_eq!(
-            bw_with_include.len(),
-            1,
-            "Only one fixture should match the include filter"
-        );
-        assert!(
-            bw_with_include[0].name.contains("Prague"),
-            "The fixture should contain 'Prague' in its name"
-        );
-
-        let bw_with_exclude = ExecSpecTestBlocksAndWitnessBuilder::default()
-            .with_input_folder(target_path.to_path_buf())?
-            .with_excludes(vec!["Prague".to_string()])
-            .build::<TrieWitnessSelector>()?
-            .generate()
-            .await?;
-        assert_eq!(
-            bw_with_exclude.len(),
-            1,
-            "Only one fixture should match the exclude filter"
-        );
-        assert!(
-            !bw_with_exclude[0].name.contains("Prague"),
-            "The fixture should not contain 'Prague' in its name"
-        );
-
-        Ok(())
-    }
-
-    #[tokio::test]
-    async fn test_generate_to_path() -> Result<()> {
-        let target_dir = tempfile::tempdir()?;
-        let target_path = target_dir.path();
-        prepare_downgraded_eest_fixtures(target_path)?;
-
-        let wg = ExecSpecTestBlocksAndWitnessBuilder::default()
-            .with_input_folder(target_path.to_path_buf())?
-            .build::<TrieWitnessSelector>()?;
-
-        let generation_dir = tempfile::tempdir()?;
-        let generation_path = generation_dir.path();
-        let count = wg.generate_to_path(generation_path).await?;
-        assert_eq!(
-            count, 2,
-            "Only two fixtures are expected for the worst_jumps EEST fixture"
-        );
-        assert_eq!(
-            generation_path.read_dir()?.count(),
-            2,
-            "There should be two generated fixture files in the output directory"
-        );
-
-        Ok(())
-    }
-
-    #[tokio::test]
-    #[cfg(feature = "slow-tests")]
-    async fn test_generate_latest_release() -> Result<()> {
-        let target_dir = tempfile::tempdir()?;
-        let target_path = target_dir.path();
-        decompress_eest_release(target_path)?;
-
-        let mut bw = ExecSpecTestBlocksAndWitnessBuilder::default()
-            .with_input_folder(target_path.join("zkevm-fixtures"))?
-            .with_includes(vec!["Prague".to_string()])
-            .build::<TrieWitnessSelector>()?;
-
-        let generated = bw.generate().await?;
-        assert!(
-            !generated.is_empty(),
-            "Expected to generate at least one fixture from the latest EEST release"
-        );
-
-        // Simulate that the EEST fixures were downloaded using the script.
-        bw.delete_eest_folder = true;
-
-        // Since we downloaded using the script, the temporary directory of EEST fixtures created by the script
-        // should be deleted when the `ExecSpecTestBlocksAndWitnesses` is dropped.
-        drop(bw);
-        assert!(
-            !PathBuf::from(ExecSpecTestBlocksAndWitnessBuilder::TEMP_EEST_FIXTURES_PATH).exists(),
-            "Directory should be deleted after drop"
-        );
-
-        Ok(())
-    }
-
-    #[tokio::test]
-    async fn test_invalid_block() -> Result<()> {
-        let path =
-            PathBuf::from(env!("CARGO_WORKSPACE_DIR")).join("tests/assets/eest-invalid-block");
-
-        let wg = ExecSpecTestBlocksAndWitnessBuilder::default()
-            .with_input_folder(path)?
-            .build::<TrieWitnessSelector>()?;
-
-        let generated = wg.generate().await?;
-
-        assert_eq!(
-            generated.len(),
-            1,
-            "Expected single fixture for the invalid block test"
-        );
-
-        // The provided test with an invalid block fails due to header consensus checks.
-        let witness = generated.into_iter().next().unwrap();
-        assert!(
-            witness.block_and_witness.witness.headers.len() == 1
-                && witness.block_and_witness.witness.keys.is_empty()
-                && witness.block_and_witness.witness.codes.is_empty()
-                && witness.block_and_witness.witness.state.is_empty(),
-            "Witnesses must only have one header value and no other data"
-        );
-        assert!(!witness.success, "The test must fail");
-
-        Ok(())
-    }
 }

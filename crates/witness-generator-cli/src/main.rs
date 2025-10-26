@@ -10,7 +10,7 @@ use tokio_util::sync::CancellationToken;
 use tracing::info;
 use tracing_subscriber::EnvFilter;
 use witness_generator::{
-    WitnessGenerator,
+    FixtureGenerator,
     eest_generator::{
         ExecSpecTestBlocksAndWitnessBuilder, FlatWitnessSelector, TrieWitnessSelector,
     },
@@ -85,8 +85,8 @@ enum WitnessType {
 }
 
 enum Generator {
-    Trie(Box<dyn WitnessGenerator<ExecutionWitness>>),
-    Flat(Box<dyn WitnessGenerator<FlatExecutionWitness>>),
+    Trie(Box<dyn FixtureGenerator<ExecutionWitness>>),
+    Flat(Box<dyn FixtureGenerator<FlatExecutionWitness>>),
 }
 
 #[tokio::main]

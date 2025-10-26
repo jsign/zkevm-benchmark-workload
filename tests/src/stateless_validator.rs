@@ -9,7 +9,7 @@ mod tests {
     use tempfile::{tempdir, TempDir};
     use witness_generator::{
         eest_generator::{ExecSpecTestBlocksAndWitnessBuilder, TrieWitnessSelector},
-        WitnessGenerator,
+        FixtureGenerator,
     };
 
     use crate::utils::{
