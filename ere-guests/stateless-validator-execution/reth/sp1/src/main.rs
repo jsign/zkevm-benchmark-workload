@@ -5,7 +5,7 @@
 extern crate alloc;
 
 use reth_guest::{
-    guest::ethereum_guest,
+    guest_only_execution::ethereum_guest,
     sdk::{SDK, ScopeMarker},
 };
 use sp1_zkvm::io::read_vec;

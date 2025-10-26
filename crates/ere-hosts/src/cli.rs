@@ -1,7 +1,8 @@
 //! CLI definitions for the zkVM benchmarker
 
-use std::path::PathBuf;
+use std::{path::PathBuf, str::FromStr};
 
+use anyhow::{Result, bail};
 use benchmark_runner::{runner::Action, stateless_validator};
 use clap::{Parser, Subcommand, ValueEnum};
 use ere_dockerized::ErezkVM;
@@ -102,11 +103,20 @@ pub enum ExecutionClient {
 
 impl ExecutionClient {
     /// Get the guest relative path for the execution client
-    pub const fn guest_rel_path(&self) -> &str {
-        match self {
-            Self::Reth => "stateless-validator/reth",
-            Self::Ethrex => "stateless-validator/ethrex",
-        }
+    pub fn guest_rel_path(&self, mode: &StatelessValidatorMode) -> Result<PathBuf> {
+        let path = match (self, mode) {
+            (Self::Reth, StatelessValidatorMode::ExecutionAndStorage) => "stateless-validator/reth",
+            (Self::Ethrex, StatelessValidatorMode::ExecutionAndStorage) => {
+                "stateless-validator/ethrex"
+            }
+            (Self::Reth, StatelessValidatorMode::OnlyExecution) => {
+                "stateless-validator-execution/reth"
+            }
+            (Self::Ethrex, StatelessValidatorMode::OnlyExecution) => {
+                bail!("Ethrex client is not supported for OnlyExecution mode")
+            }
+        };
+        Ok(PathBuf::from_str(path).unwrap())
     }
 }
 

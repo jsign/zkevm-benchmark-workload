@@ -4,7 +4,7 @@ use std::{convert::TryInto, path::Path};
 
 use alloy_eips::eip6110::MAINNET_DEPOSIT_CONTRACT_ADDRESS;
 use alloy_rlp::Encodable;
-use anyhow::{Context, Result};
+use anyhow::{bail, Context, Result};
 use ere_dockerized::ErezkVM;
 use ere_io_serde::IoSerde;
 use ethrex_common::{
@@ -13,7 +13,7 @@ use ethrex_common::{
 };
 use ethrex_rlp::decode::RLPDecode;
 use rayon::iter::{IntoParallelIterator, ParallelIterator};
-use reth_stateless::{ExecutionWitness, GenericStatelessInput};
+use reth_stateless::{flat_witness::FlatExecutionWitness, ExecutionWitness, GenericStatelessInput};
 use rkyv::rancor::Error;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
@@ -57,10 +57,10 @@ pub fn stateless_validator_inputs(
 ) -> Result<Vec<GuestIO<BlockMetadata, ProgramOutputVerifier>>> {
     match mode {
         StatelessValidatorMode::ExecutionAndStorage => {
-            generate_guest_io::<StatelessInputIO>(input_folder, el)
+            generate_guest_io::<TrieWitnessIO>(input_folder, el)
         }
         StatelessValidatorMode::OnlyExecution => {
-            todo!("OnlyExecution mode is not yet implemented")
+            generate_guest_io::<FlatWitnessIO>(input_folder, el)
         }
     }
 }
@@ -147,8 +147,31 @@ impl OutputVerifier for ProgramOutputVerifier {
     }
 }
 
-struct StatelessInputIO;
-impl WitnessTypeIO for StatelessInputIO {
+struct FlatWitnessIO;
+impl WitnessTypeIO for FlatWitnessIO {
+    type Witness = FlatExecutionWitness;
+
+    fn get_input(
+        bw: &BlockAndWitness<FlatExecutionWitness>,
+        el: &ExecutionClient,
+    ) -> Result<Vec<u8>> {
+        let si = &bw.block_and_witness;
+        match el {
+            ExecutionClient::Reth => reth_guest_io::io_serde()
+                .serialize(
+                    &reth_guest_io::Input::new(si.clone())
+                        .context("Failed to create Reth input")?,
+                )
+                .map_err(|e| anyhow::anyhow!("Reth serialization error: {e}")),
+            ExecutionClient::Ethrex => {
+                bail!("Ethrex client is not supported for Flat witness type")
+            }
+        }
+    }
+}
+
+struct TrieWitnessIO;
+impl WitnessTypeIO for TrieWitnessIO {
     type Witness = ExecutionWitness;
 
     fn get_input(bw: &BlockAndWitness<ExecutionWitness>, el: &ExecutionClient) -> Result<Vec<u8>> {

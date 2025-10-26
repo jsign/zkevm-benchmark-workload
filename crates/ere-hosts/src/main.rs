@@ -48,14 +48,16 @@ fn main() -> Result<()> {
             let guest_io = stateless_validator::stateless_validator_inputs(
                 input_folder.as_path(),
                 el,
-                mode.into(),
+                mode.clone().into(),
             )?;
-            let guest_relative = Path::new(execution_client.guest_rel_path());
+            let guest_relative = execution_client
+                .guest_rel_path(&mode)
+                .context("Failed to get guest relative path")?;
             let apply_patches = matches!(execution_client, ExecutionClient::Reth);
             let zkvms = get_zkvm_instances(
                 &cli.zkvms,
                 &workspace_dir,
-                guest_relative,
+                &guest_relative,
                 resource,
                 apply_patches,
             )?;
