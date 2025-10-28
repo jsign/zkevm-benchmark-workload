@@ -164,12 +164,12 @@ async fn build_generator(source: SourceCommand, witness_type: WitnessType) -> Re
             rpc_header,
             follow: listen,
         } => {
-            // RPC generator only supports Trie witnesses
-            if !matches!(witness_type, WitnessType::Trie) {
-                return Err(anyhow!(
-                    "RPC source only supports Trie witness type. Flat witnesses are not available for RPC."
-                ));
-            }
+            // // RPC generator only supports Trie witnesses
+            // if !matches!(witness_type, WitnessType::Trie) {
+            //     return Err(anyhow!(
+            //         "RPC source only supports Trie witness type. Flat witnesses are not available for RPC."
+            //     ));
+            // }
 
             let mut builder = RpcBlocksAndWitnessesBuilder::new(rpc_url);
 
@@ -202,7 +202,7 @@ async fn build_generator(source: SourceCommand, witness_type: WitnessType) -> Re
                 builder = builder.last_n_blocks(n_blocks);
             }
 
-            Ok(Generator::Trie(Box::new(
+            Ok(Generator::Flat(Box::new(
                 builder
                     .build()
                     .await

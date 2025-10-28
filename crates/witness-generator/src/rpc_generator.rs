@@ -13,7 +13,7 @@ use jsonrpsee::{
 use reth_chainspec::{Chain, HOLESKY, HOODI, MAINNET, NamedChain, SEPOLIA};
 use reth_ethereum_primitives::TransactionSigned;
 use reth_rpc_api::{DebugApiClient, EthApiClient};
-use reth_stateless::{ExecutionWitness, GenericStatelessInput};
+use reth_stateless::{ExecutionWitness, GenericStatelessInput, flat_witness::FlatExecutionWitness};
 use std::{path::Path, str::FromStr};
 use tokio_util::sync::CancellationToken;
 
@@ -121,11 +121,11 @@ pub struct RpcBlocksAndWitnesses {
 }
 
 #[async_trait]
-impl FixtureGenerator<ExecutionWitness> for RpcBlocksAndWitnesses {
+impl FixtureGenerator<FlatExecutionWitness> for RpcBlocksAndWitnesses {
     /// Generates blocks and witnesses based on the configuration.
     ///
     /// Returns either the last N blocks or a specific block with their execution witnesses.
-    async fn generate(&self) -> Result<Vec<StatelessValidationFixture<ExecutionWitness>>> {
+    async fn generate(&self) -> Result<Vec<StatelessValidationFixture<FlatExecutionWitness>>> {
         // If live polling is enabled, we return an error here
         if self.stop.is_some() {
             return Err(WitnessGeneratorError::LivePollingNotSupported);
@@ -168,7 +168,7 @@ impl RpcBlocksAndWitnesses {
     async fn fetch_last_n_blocks(
         &self,
         last_n_blocks: usize,
-    ) -> Result<Vec<StatelessValidationFixture<ExecutionWitness>>> {
+    ) -> Result<Vec<StatelessValidationFixture<FlatExecutionWitness>>> {
         if last_n_blocks == 0 {
             return Ok(vec![]);
         }
@@ -204,7 +204,7 @@ impl RpcBlocksAndWitnesses {
 
         let mut blocks_and_witnesses = Vec::with_capacity(hashes.len());
         for (block_num, block_hash) in hashes {
-            let witness = DebugApiClient::<()>::debug_execution_witness_by_block_hash(
+            let witness = DebugApiClient::<()>::debug_flat_execution_witness_by_block_hash(
                 &self.client,
                 block_hash,
             )
@@ -225,7 +225,7 @@ impl RpcBlocksAndWitnesses {
 
             blocks_and_witnesses.push(StatelessValidationFixture {
                 name: format!("rpc_block_{block_num}"),
-                stateless_input: GenericStatelessInput::<ExecutionWitness> {
+                stateless_input: GenericStatelessInput::<_> {
                     block: block.into_consensus(),
                     witness,
                     chain_config: self.chain_config.clone(),
@@ -247,9 +247,9 @@ impl RpcBlocksAndWitnesses {
     async fn fetch_specific_block(
         &self,
         block_num: u64,
-    ) -> Result<StatelessValidationFixture<ExecutionWitness>> {
+    ) -> Result<StatelessValidationFixture<FlatExecutionWitness>> {
         // Fetch the execution witness for the given block
-        let witness = DebugApiClient::<()>::debug_execution_witness(
+        let witness = DebugApiClient::<()>::debug_flat_execution_witness(
             &self.client,
             BlockNumberOrTag::Number(block_num),
         )
@@ -271,7 +271,7 @@ impl RpcBlocksAndWitnesses {
 
         let bw = StatelessValidationFixture {
             name: format!("rpc_block_{block_num}"),
-            stateless_input: GenericStatelessInput::<ExecutionWitness> {
+            stateless_input: GenericStatelessInput::<FlatExecutionWitness> {
                 block: block.into_consensus(),
                 witness,
                 chain_config: self.chain_config.clone(),
@@ -296,7 +296,7 @@ impl RpcBlocksAndWitnesses {
     async fn fetch_from_block(
         &self,
         block_num: u64,
-    ) -> Result<Vec<StatelessValidationFixture<ExecutionWitness>>> {
+    ) -> Result<Vec<StatelessValidationFixture<FlatExecutionWitness>>> {
         let latest_block = EthApiClient::<TransactionRequest, Transaction, Block, Receipt, Header>::block_by_number(
             &self.client,
             BlockNumberOrTag::Latest,
@@ -400,7 +400,7 @@ impl RpcBlocksAndWitnesses {
     /// Returns an error if serialization fails or if any file cannot be written.
     fn save_to_path(
         &self,
-        bws: &[StatelessValidationFixture<ExecutionWitness>],
+        bws: &[StatelessValidationFixture<FlatExecutionWitness>],
         path: &Path,
     ) -> Result<()> {
         for bw in bws {
