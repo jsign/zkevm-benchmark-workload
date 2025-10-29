@@ -14,7 +14,7 @@ use witness_generator::{
     eest_generator::{
         ExecSpecTestBlocksAndWitnessBuilder, FlatWitnessSelector, TrieWitnessSelector,
     },
-    rpc_generator::{RpcBlocksAndWitnessesBuilder, RpcFlatHeaderKeyValues},
+    rpc_generator::{self, RpcBlocksAndWitnessesBuilder, RpcFlatHeaderKeyValues},
 };
 
 #[derive(Parser)]
@@ -81,12 +81,7 @@ enum SourceCommand {
 #[derive(ValueEnum, Clone, Debug)]
 enum WitnessType {
     Trie,
-    Flat,
-}
-
-enum Generator {
-    Trie(Box<dyn FixtureGenerator<ExecutionWitness>>),
-    Flat(Box<dyn FixtureGenerator<FlatExecutionWitness>>),
+    ExecutionOnly,
 }
 
 #[tokio::main]
@@ -102,26 +97,28 @@ async fn main() -> Result<()> {
             .with_context(|| format!("Failed to create output folder: {:?}", cli.output_folder))?;
     }
 
-    let generator = build_generator(cli.source, cli.witness_type).await?;
+    let witness_type = match cli.witness_type {
+        WitnessType::Trie => witness_generator::WitnessType::Trie,
+        WitnessType::ExecutionOnly => witness_generator::WitnessType::ExecutionOnly,
+    };
+
+    let generator = build_generator(cli.source, witness_type).await?;
 
     info!("Generating fixtures...");
-    let count = match generator {
-        Generator::Trie(g) => g
-            .generate_to_path(&cli.output_folder)
-            .await
-            .context("Failed to generate blocks and witnesses")?,
-        Generator::Flat(g) => g
-            .generate_to_path(&cli.output_folder)
-            .await
-            .context("Failed to generate blocks and witnesses")?,
-    };
+    let count = generator
+        .generate_to_path(&cli.output_folder, witness_type)
+        .await
+        .context("Failed to generate blocks and witnesses")?;
 
     info!("Generated {} blocks and witnesses", count);
 
     Ok(())
 }
 
-async fn build_generator(source: SourceCommand, witness_type: WitnessType) -> Result<Generator> {
+async fn build_generator(
+    source: SourceCommand,
+    witness_type: witness_generator::WitnessType,
+) -> Result<Box<dyn FixtureGenerator>> {
     match source {
         SourceCommand::Tests {
             tag,
@@ -145,16 +142,16 @@ async fn build_generator(source: SourceCommand, witness_type: WitnessType) -> Re
             }
 
             match witness_type {
-                WitnessType::Trie => Ok(Generator::Trie(Box::new(
+                witness_generator::WitnessType::Trie => Ok(Box::new(
                     builder
                         .build::<TrieWitnessSelector>()
                         .context("Failed to build EEST generator")?,
-                ))),
-                WitnessType::Flat => Ok(Generator::Flat(Box::new(
+                )),
+                witness_generator::WitnessType::ExecutionOnly => Ok(Box::new(
                     builder
                         .build::<FlatWitnessSelector>()
                         .context("Failed to build EEST generator")?,
-                ))),
+                )),
             }
         }
         SourceCommand::Rpc {
@@ -164,13 +161,6 @@ async fn build_generator(source: SourceCommand, witness_type: WitnessType) -> Re
             rpc_header,
             follow: listen,
         } => {
-            // // RPC generator only supports Trie witnesses
-            // if !matches!(witness_type, WitnessType::Trie) {
-            //     return Err(anyhow!(
-            //         "RPC source only supports Trie witness type. Flat witnesses are not available for RPC."
-            //     ));
-            // }
-
             let mut builder = RpcBlocksAndWitnessesBuilder::new(rpc_url);
 
             if let Some(rpc_header) = rpc_header {
@@ -202,12 +192,12 @@ async fn build_generator(source: SourceCommand, witness_type: WitnessType) -> Re
                 builder = builder.last_n_blocks(n_blocks);
             }
 
-            Ok(Generator::Flat(Box::new(
+            Ok(Box::new(
                 builder
                     .build()
                     .await
                     .context("Failed to build RPC generator")?,
-            )))
+            ))
         }
     }
 }

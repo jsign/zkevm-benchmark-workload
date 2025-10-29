@@ -172,3 +172,4 @@ tracing = "0.1.41"
 tracing-subscriber = { version = "0.3.19", features = ["env-filter"] }
 rkyv = "0.8.10"
 bytes = "1.10"
+erased-serde = "0.4.8"

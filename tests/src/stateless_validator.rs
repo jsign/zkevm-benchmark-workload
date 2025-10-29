@@ -118,7 +118,10 @@ mod tests {
                 .unwrap()
                 .build::<TrieWitnessSelector>()
                 .unwrap()
-                .generate_to_path(bench_fixtures_dir.path())
+                .generate_to_path(
+                    bench_fixtures_dir.path(),
+                    witness_generator::WitnessType::Trie,
+                )
                 .await
                 .unwrap();
 
@@ -155,7 +158,10 @@ mod tests {
                 .unwrap()
                 .build::<TrieWitnessSelector>()
                 .unwrap()
-                .generate_to_path(bench_fixtures_dir.path())
+                .generate_to_path(
+                    bench_fixtures_dir.path(),
+                    witness_generator::WitnessType::Trie,
+                )
                 .await
                 .unwrap();
 

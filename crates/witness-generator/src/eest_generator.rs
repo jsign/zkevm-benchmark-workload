@@ -10,7 +10,7 @@ use ef_tests::{
 use rayon::prelude::*;
 use reth_chainspec::ChainSpec;
 use reth_ethereum_primitives::Block;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use std::{
     path::{Path, PathBuf},
     process::Command,
@@ -18,7 +18,10 @@ use std::{
 use tracing::error;
 use walkdir::{DirEntry, WalkDir};
 
-use crate::{FixtureGenerator, Result, StatelessValidationFixture, WitnessGeneratorError};
+use crate::{
+    Fixture, FixtureGenerator, Result, StatelessValidationFixture, WitnessGeneratorError,
+    WitnessType,
+};
 use reth_stateless::{ExecutionWitness, GenericStatelessInput, flat_witness::FlatExecutionWitness};
 
 /// Witness generator that produces `BlockAndWitness` fixtures for execution-spec-test fixtures.
@@ -142,7 +145,7 @@ impl<WS: WitnessesSelector> Drop for ExecSpecTestBlocksAndWitnesses<WS> {
 /// Trait for selecting witnesses from execution-spec-test cases.
 pub trait WitnessesSelector: Send + Sync {
     /// The target type produced by the witness selector.
-    type Target: Serialize + Send + Sync;
+    type Target: Serialize + for<'de> Deserialize<'de> + Send + Sync + 'static;
 
     /// Selects the appropriate witness type from the provided execution witnesses.
     fn select_witness(
@@ -193,10 +196,48 @@ impl WitnessesSelector for FlatWitnessSelector {
 }
 
 #[async_trait]
-impl<WS: WitnessesSelector> FixtureGenerator<WS::Target> for ExecSpecTestBlocksAndWitnesses<WS> {
+impl<WS: WitnessesSelector> FixtureGenerator for ExecSpecTestBlocksAndWitnesses<WS> {
+    /// Generates `BlockAndWitness` fixtures from EEST test cases and writes them to the specified path.
+    ///
+    /// This method processes all matching EEST test cases, generates the corresponding
+    /// witness data, and writes each fixture as a separate JSON file in the output directory.
+    ///
+    /// # Arguments
+    /// * `path` - The directory path where JSON fixture files will be written
+    ///
+    /// # Returns
+    /// The number of fixture files successfully generated and written
+    ///
+    /// # Errors
+    /// Returns an error if fixture generation fails, serialization fails, or file writing fails.
+    async fn generate_to_path(&self, path: &Path, witness_type: WitnessType) -> Result<usize> {
+        let bws = self.generate(witness_type).await?;
+        for bw in &bws {
+            let output_path = path.join(format!("{}.json", bw.name()));
+            let mut buf = Vec::new();
+            let mut serializer = serde_json::Serializer::pretty(&mut buf);
+            erased_serde::serialize(bw.as_ref(), &mut serializer).map_err(|e| {
+                WitnessGeneratorError::FixtureSerializationError {
+                    name: bw.name().to_owned(),
+                    source: e,
+                }
+            })?;
+
+            std::fs::write(&output_path, buf).map_err(|e| {
+                WitnessGeneratorError::FixtureWriteError {
+                    path: output_path.display().to_string(),
+                    source: e,
+                }
+            })?;
+        }
+        Ok(bws.len())
+    }
+}
+
+impl<WS: WitnessesSelector> ExecSpecTestBlocksAndWitnesses<WS> {
     // Generates blocks and witnesses from the EEST fixtures located in the specified directory,
     // filtering by the provided include and exclude patterns.
-    async fn generate(&self) -> Result<Vec<StatelessValidationFixture<WS::Target>>> {
+    async fn generate(&self, witness_type: WitnessType) -> Result<Vec<Box<dyn Fixture>>> {
         let suite_path = self.directory_path.join("fixtures/blockchain_tests");
 
         if !suite_path.exists() {
@@ -230,7 +271,7 @@ impl<WS: WitnessesSelector> FixtureGenerator<WS::Target> for ExecSpecTestBlocksA
             tests.extend(file_tests);
         }
 
-        let bws: Result<Vec<_>> = tests
+        let bws = tests
             .par_iter()
             .map(|(name, case)| {
                 let chain_spec: ChainSpec = case.network.into();
@@ -257,43 +298,12 @@ impl<WS: WitnessesSelector> FixtureGenerator<WS::Target> for ExecSpecTestBlocksA
                     success,
                 })
             })
-            .collect();
+            .collect::<Result<Vec<_>>>()?;
 
-        bws
-    }
-
-    /// Generates `BlockAndWitness` fixtures from EEST test cases and writes them to the specified path.
-    ///
-    /// This method processes all matching EEST test cases, generates the corresponding
-    /// witness data, and writes each fixture as a separate JSON file in the output directory.
-    ///
-    /// # Arguments
-    /// * `path` - The directory path where JSON fixture files will be written
-    ///
-    /// # Returns
-    /// The number of fixture files successfully generated and written
-    ///
-    /// # Errors
-    /// Returns an error if fixture generation fails, serialization fails, or file writing fails.
-    async fn generate_to_path(&self, path: &Path) -> Result<usize> {
-        let bws = self.generate().await?;
-        for bw in &bws {
-            let output_path = path.join(format!("{}.json", bw.name));
-            let output_data = serde_json::to_string_pretty(&bw).map_err(|e| {
-                WitnessGeneratorError::FixtureSerializationError {
-                    name: bw.name.clone(),
-                    source: e,
-                }
-            })?;
-
-            std::fs::write(&output_path, output_data).map_err(|e| {
-                WitnessGeneratorError::FixtureWriteError {
-                    path: output_path.display().to_string(),
-                    source: e,
-                }
-            })?;
-        }
-        Ok(bws.len())
+        Ok(bws
+            .into_iter()
+            .map(|f| Box::new(f) as Box<dyn Fixture>)
+            .collect())
     }
 }
 

@@ -1,6 +1,9 @@
 //! Generate block and witnesses from an RPC endpoint
 
-use crate::{FixtureGenerator, Result, StatelessValidationFixture, WitnessGeneratorError};
+use crate::{
+    Fixture, FixtureGenerator, Result, StatelessValidationFixture, WitnessGeneratorError,
+    WitnessType,
+};
 use alloy_eips::BlockNumberOrTag;
 use alloy_genesis::ChainConfig;
 use alloy_rpc_types_eth::{Block, Header, Receipt, Transaction, TransactionRequest};
@@ -121,32 +124,10 @@ pub struct RpcBlocksAndWitnesses {
 }
 
 #[async_trait]
-impl FixtureGenerator<FlatExecutionWitness> for RpcBlocksAndWitnesses {
-    /// Generates blocks and witnesses based on the configuration.
-    ///
-    /// Returns either the last N blocks or a specific block with their execution witnesses.
-    async fn generate(&self) -> Result<Vec<StatelessValidationFixture<FlatExecutionWitness>>> {
-        // If live polling is enabled, we return an error here
-        if self.stop.is_some() {
-            return Err(WitnessGeneratorError::LivePollingNotSupported);
-        }
-
-        // Handle last_n_blocks case
-        if let Some(last_n_blocks) = self.last_n_blocks {
-            return self.fetch_last_n_blocks(last_n_blocks).await;
-        }
-
-        // Handle one block case
-        if let Some(block) = self.block {
-            return Ok(vec![self.fetch_specific_block(block).await?]);
-        }
-
-        Ok(vec![])
-    }
-
-    async fn generate_to_path(&self, path: &Path) -> Result<usize> {
+impl FixtureGenerator for RpcBlocksAndWitnesses {
+    async fn generate_to_path(&self, path: &Path, witness_type: WitnessType) -> Result<usize> {
         let count = if self.last_n_blocks.is_some() || self.block.is_some() {
-            let bws = self.generate().await?;
+            let bws = self.generate(witness_type).await?;
             self.save_to_path(&bws, path)?;
             bws.len()
         } else {
@@ -158,6 +139,27 @@ impl FixtureGenerator<FlatExecutionWitness> for RpcBlocksAndWitnesses {
 }
 
 impl RpcBlocksAndWitnesses {
+    /// Generates blocks and witnesses based on the configuration.
+    ///
+    /// Returns either the last N blocks or a specific block with their execution witnesses.
+    async fn generate(&self, witness_type: WitnessType) -> Result<Vec<Box<dyn Fixture>>> {
+        // If live polling is enabled, we return an error here
+        if self.stop.is_some() {
+            return Err(WitnessGeneratorError::LivePollingNotSupported);
+        }
+
+        // Handle last_n_blocks case
+        if let Some(last_n_blocks) = self.last_n_blocks {
+            return self.fetch_last_n_blocks(last_n_blocks, witness_type).await;
+        }
+
+        // Handle one block case
+        if let Some(block) = self.block {
+            return Ok(vec![self.fetch_specific_block(block).await?]);
+        }
+
+        Ok(vec![])
+    }
     /// Fetches the last N blocks and their execution witnesses.
     ///
     /// # Arguments
@@ -168,7 +170,8 @@ impl RpcBlocksAndWitnesses {
     async fn fetch_last_n_blocks(
         &self,
         last_n_blocks: usize,
-    ) -> Result<Vec<StatelessValidationFixture<FlatExecutionWitness>>> {
+        witness_type: WitnessType,
+    ) -> Result<Vec<Box<dyn Fixture>>> {
         if last_n_blocks == 0 {
             return Ok(vec![]);
         }
@@ -204,12 +207,6 @@ impl RpcBlocksAndWitnesses {
 
         let mut blocks_and_witnesses = Vec::with_capacity(hashes.len());
         for (block_num, block_hash) in hashes {
-            let witness = DebugApiClient::<()>::debug_flat_execution_witness_by_block_hash(
-                &self.client,
-                block_hash,
-            )
-            .await
-            .map_err(|e| WitnessGeneratorError::RpcError(e.to_string()))?;
             let block = EthApiClient::<
                 TransactionRequest,
                 Transaction,
@@ -223,15 +220,45 @@ impl RpcBlocksAndWitnesses {
                 block_hash.to_string(),
             ))?;
 
-            blocks_and_witnesses.push(StatelessValidationFixture {
-                name: format!("rpc_block_{block_num}"),
-                stateless_input: GenericStatelessInput::<_> {
-                    block: block.into_consensus(),
-                    witness,
-                    chain_config: self.chain_config.clone(),
-                },
-                success: true,
-            });
+            let bw = match witness_type {
+                WitnessType::Trie => {
+                    let witness = DebugApiClient::<()>::debug_execution_witness_by_block_hash(
+                        &self.client,
+                        block_hash,
+                    )
+                    .await
+                    .map_err(|e| WitnessGeneratorError::RpcError(e.to_string()))?;
+
+                    Box::new(StatelessValidationFixture {
+                        name: format!("rpc_block_{block_num}"),
+                        stateless_input: GenericStatelessInput::<_> {
+                            block: block.into_consensus(),
+                            witness,
+                            chain_config: self.chain_config.clone(),
+                        },
+                        success: true,
+                    }) as Box<dyn Fixture>
+                }
+                WitnessType::ExecutionOnly => {
+                    let witness = DebugApiClient::<()>::debug_flat_execution_witness_by_block_hash(
+                        &self.client,
+                        block_hash,
+                    )
+                    .await
+                    .map_err(|e| WitnessGeneratorError::RpcError(e.to_string()))?;
+                    Box::new(StatelessValidationFixture {
+                        name: format!("rpc_block_{block_num}"),
+                        stateless_input: GenericStatelessInput::<_> {
+                            block: block.into_consensus(),
+                            witness,
+                            chain_config: self.chain_config.clone(),
+                        },
+                        success: true,
+                    }) as Box<dyn Fixture>
+                }
+            };
+
+            blocks_and_witnesses.push(bw);
         }
 
         Ok(blocks_and_witnesses)
@@ -244,10 +271,7 @@ impl RpcBlocksAndWitnesses {
     ///
     /// # Errors
     /// Returns an error if the RPC call fails or if the block cannot be found.
-    async fn fetch_specific_block(
-        &self,
-        block_num: u64,
-    ) -> Result<StatelessValidationFixture<FlatExecutionWitness>> {
+    async fn fetch_specific_block(&self, block_num: u64) -> Result<Box<dyn Fixture>> {
         // Fetch the execution witness for the given block
         let witness = DebugApiClient::<()>::debug_flat_execution_witness(
             &self.client,
@@ -279,7 +303,7 @@ impl RpcBlocksAndWitnesses {
             success: true,
         };
 
-        Ok(bw)
+        Ok(Box::new(bw))
     }
 
     /// Fetches blocks from a specific block number to the latest block and their execution witnesses.
@@ -293,10 +317,7 @@ impl RpcBlocksAndWitnesses {
     /// # Errors
     ///
     /// Returns an error if any RPC call fails or if blocks cannot be found.
-    async fn fetch_from_block(
-        &self,
-        block_num: u64,
-    ) -> Result<Vec<StatelessValidationFixture<FlatExecutionWitness>>> {
+    async fn fetch_from_block(&self, block_num: u64) -> Result<Vec<Box<dyn Fixture>>> {
         let latest_block = EthApiClient::<TransactionRequest, Transaction, Block, Receipt, Header>::block_by_number(
             &self.client,
             BlockNumberOrTag::Latest,
@@ -361,7 +382,7 @@ impl RpcBlocksAndWitnesses {
                                 match self.save_to_path(&bws, path) {
                                     Ok(_) => {
                                         count += bws.len();
-                                        next_block_num = bws.last().unwrap().stateless_input.block.number + 1;
+                                        next_block_num = bws.last().unwrap().block_number() + 1;
                                     },
                                     Err(e) => error!("Failed to save data: {e}"),
                                 }
@@ -398,21 +419,18 @@ impl RpcBlocksAndWitnesses {
     /// # Errors
     ///
     /// Returns an error if serialization fails or if any file cannot be written.
-    fn save_to_path(
-        &self,
-        bws: &[StatelessValidationFixture<FlatExecutionWitness>],
-        path: &Path,
-    ) -> Result<()> {
+    fn save_to_path(&self, bws: &[Box<dyn Fixture>], path: &Path) -> Result<()> {
         for bw in bws {
-            let output_path = path.join(format!("{}.json", bw.name));
-            let output_data = serde_json::to_string_pretty(&bw).map_err(|e| {
+            let output_path = path.join(format!("{}.json", bw.name()));
+            let mut buf = Vec::new();
+            let mut serializer = serde_json::Serializer::pretty(&mut buf);
+            erased_serde::serialize(bw.as_ref(), &mut serializer).map_err(|e| {
                 WitnessGeneratorError::FixtureSerializationError {
-                    name: bw.name.clone(),
+                    name: bw.name().to_owned(),
                     source: e,
                 }
             })?;
-
-            std::fs::write(&output_path, output_data).map_err(|e| {
+            std::fs::write(&output_path, buf).map_err(|e| {
                 WitnessGeneratorError::FixtureWriteError {
                     path: output_path.display().to_string(),
                     source: e,
@@ -520,7 +538,7 @@ mod test {
 
         // Generate to Vector
         let bws = rpc_bw
-            .generate()
+            .generate(WitnessType::Trie)
             .await
             .expect("Failed to generate blocks and witnesses");
 
@@ -530,7 +548,7 @@ mod test {
         let target_dir = tempfile::tempdir()
             .expect("Failed to create temporary directory for blocks and witnesses");
         rpc_bw
-            .generate_to_path(target_dir.path())
+            .generate_to_path(target_dir.path(), WitnessType::Trie)
             .await
             .expect("Failed to generate blocks and witnesses to path");
 
@@ -578,13 +596,14 @@ mod test {
 
         // Generate to Vector
         let bws = rpc_bw
-            .generate()
+            .generate(WitnessType::Trie)
             .await
             .expect("Failed to generate blocks and witnesses");
 
         assert_eq!(bws.len(), 1, "Expected 1 block and witness");
         assert_eq!(
-            bws[0].stateless_input.block.number, block_number,
+            bws[0].block_number(),
+            block_number,
             "Expected block number to match"
         );
 
@@ -592,7 +611,7 @@ mod test {
         let target_dir = tempfile::tempdir()
             .expect("Failed to create temporary directory for blocks and witnesses");
         rpc_bw
-            .generate_to_path(target_dir.path())
+            .generate_to_path(target_dir.path(), WitnessType::Trie)
             .await
             .expect("Failed to generate blocks and witnesses to path");
 
@@ -632,7 +651,7 @@ mod test {
             .build()
             .await
             .expect("Failed to build RPC Blocks and Witnesses")
-            .generate_to_path(target_dir.path())
+            .generate_to_path(target_dir.path(), WitnessType::Trie)
             .await
             .expect("Failed to generate blocks and witnesses to path");
 

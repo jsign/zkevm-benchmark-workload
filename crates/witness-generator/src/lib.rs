@@ -169,17 +169,26 @@ pub enum WitnessGeneratorError {
 /// Result type alias for witness generation operations.
 pub type Result<T> = std::result::Result<T, WitnessGeneratorError>;
 
+/// Type of witness to generate from RPC
+#[derive(Debug, Copy, Clone, Default)]
+pub enum WitnessType {
+    /// Trie-based witness
+    #[default]
+    Trie,
+    /// Execution-only witness
+    ExecutionOnly,
+}
+
+pub trait Fixture: erased_serde::Serialize + Send + Sync {
+    fn name(&self) -> &str;
+    fn block_number(&self) -> u64;
+}
+
 /// Trait for generating stateless validation fixtures.
 #[async_trait]
-pub trait FixtureGenerator<T>
-where
-    T: Serialize + Send + Sync,
-{
-    /// Generates fixtures.
-    async fn generate(&self) -> Result<Vec<StatelessValidationFixture<T>>>;
-
+pub trait FixtureGenerator {
     /// Generates fixtures and writes them to file.
-    async fn generate_to_path(&self, path: &Path) -> Result<usize>;
+    async fn generate_to_path(&self, path: &Path, witness_type: WitnessType) -> Result<usize>;
 }
 
 /// A stateless validation fixture containing block data and witness information.
@@ -220,5 +229,18 @@ impl<T: Serialize + for<'de> Deserialize<'de>> StatelessValidationFixture<T> {
                 source: e,
             })?;
         Self::from_json(&contents)
+    }
+}
+
+impl<T> Fixture for StatelessValidationFixture<T>
+where
+    T: Serialize + for<'de> Deserialize<'de> + Send + Sync,
+{
+    fn name(&self) -> &str {
+        &self.name
+    }
+
+    fn block_number(&self) -> u64 {
+        self.stateless_input.block.number
     }
 }
