@@ -37,7 +37,7 @@ pub enum ExecutionClient {
 #[derive(Debug)]
 pub enum StatelessValidatorMode {
     /// Validate both execution and storage.
-    ExecutionAndStorage,
+    FullValidation,
     /// Validate only execution.
     OnlyExecution,
 }
@@ -56,7 +56,7 @@ pub fn stateless_validator_inputs(
     mode: StatelessValidatorMode,
 ) -> Result<Vec<GuestIO<BlockMetadata, ProgramOutputVerifier>>> {
     match mode {
-        StatelessValidatorMode::ExecutionAndStorage => {
+        StatelessValidatorMode::FullValidation => {
             generate_guest_io::<TrieWitnessIO>(input_folder, el)
         }
         StatelessValidatorMode::OnlyExecution => {

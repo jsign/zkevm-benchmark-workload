@@ -78,7 +78,7 @@ pub enum GuestProgramCommand {
 #[derive(Debug, Clone, ValueEnum)]
 pub enum StatelessValidatorMode {
     /// Validate both execution and storage
-    ExecutionAndStorage,
+    FullValidation,
     /// Validate only execution
     OnlyExecution,
 }
@@ -105,10 +105,8 @@ impl ExecutionClient {
     /// Get the guest relative path for the execution client
     pub fn guest_rel_path(&self, mode: &StatelessValidatorMode) -> Result<PathBuf> {
         let path = match (self, mode) {
-            (Self::Reth, StatelessValidatorMode::ExecutionAndStorage) => "stateless-validator/reth",
-            (Self::Ethrex, StatelessValidatorMode::ExecutionAndStorage) => {
-                "stateless-validator/ethrex"
-            }
+            (Self::Reth, StatelessValidatorMode::FullValidation) => "stateless-validator/reth",
+            (Self::Ethrex, StatelessValidatorMode::FullValidation) => "stateless-validator/ethrex",
             (Self::Reth, StatelessValidatorMode::OnlyExecution) => {
                 "stateless-validator-execution/reth"
             }
@@ -177,7 +175,7 @@ impl From<ExecutionClient> for stateless_validator::ExecutionClient {
 impl From<StatelessValidatorMode> for stateless_validator::StatelessValidatorMode {
     fn from(mode: StatelessValidatorMode) -> Self {
         match mode {
-            StatelessValidatorMode::ExecutionAndStorage => Self::ExecutionAndStorage,
+            StatelessValidatorMode::FullValidation => Self::FullValidation,
             StatelessValidatorMode::OnlyExecution => Self::OnlyExecution,
         }
     }

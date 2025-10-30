@@ -76,7 +76,7 @@ mod tests {
             let inputs = stateless_validator::stateless_validator_inputs(
                 input_folder,
                 el,
-                StatelessValidatorMode::ExecutionAndStorage,
+                StatelessValidatorMode::FullValidation,
             )
             .unwrap();
             let len_inputs = inputs.len();
@@ -126,7 +126,7 @@ mod tests {
             let inputs = stateless_validator::stateless_validator_inputs(
                 bench_fixtures_dir.path(),
                 el,
-                StatelessValidatorMode::ExecutionAndStorage,
+                StatelessValidatorMode::FullValidation,
             )
             .unwrap();
 
@@ -166,7 +166,7 @@ mod tests {
             let inputs = stateless_validator::stateless_validator_inputs(
                 bench_fixtures_dir.path(),
                 *el,
-                StatelessValidatorMode::ExecutionAndStorage,
+                StatelessValidatorMode::FullValidation,
             )
             .unwrap();
 
