@@ -1,4 +1,12 @@
-#![doc = include_str!("../README.md")]
+//! Library for generating stateless validation fixtures for zkEVM benchmarking.
+//!
+//! Produces JSON fixtures containing Ethereum block data and execution witnesses from two sources:
+//!
+//! - **EEST Generator** ([`eest_generator`]): Converts Ethereum Execution Spec Tests into fixtures
+//! - **RPC Generator** ([`rpc_generator`]): Fetches blocks and witnesses from live Ethereum nodes
+//!
+//! Core types: [`StatelessValidationFixture`] (block + witness), [`FixtureGenerator`],
+//! and [`WitnessType`] (`FullValidation` or `ExecutionOnly`).
 #![cfg_attr(not(test), warn(unused_crate_dependencies))]
 
 use std::{fs, path::Path};
