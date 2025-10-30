@@ -7,7 +7,7 @@ license.workspace = true
 
 [dependencies]
 witness-generator.workspace = true
-reth-stateless.workspace = true
+
 clap.workspace = true
 anyhow.workspace = true
 tokio.workspace = true

@@ -13,7 +13,7 @@ pub mod rpc_generator;
 
 /// Error types for witness generation operations.
 #[derive(Debug, Error)]
-pub enum WitnessGeneratorError {
+pub enum WGError {
     /// Error during JSON serialization
     #[error("failed to serialize fixtures to JSON: {0}")]
     SerializationError(#[from] serde_json::Error),
@@ -167,28 +167,53 @@ pub enum WitnessGeneratorError {
 }
 
 /// Result type alias for witness generation operations.
-pub type Result<T> = std::result::Result<T, WitnessGeneratorError>;
+pub type Result<T> = std::result::Result<T, WGError>;
 
-/// Type of witness to generate from RPC
+/// Stateless witness types.
 #[derive(Debug, Copy, Clone, Default)]
 pub enum WitnessType {
-    /// Trie-based witness
+    /// Full validation witness
     #[default]
-    Trie,
+    FullValidation,
     /// Execution-only witness
     ExecutionOnly,
 }
 
+/// Trait representing a fixture with serialization support and metadata access.
 pub trait Fixture: erased_serde::Serialize + Send + Sync {
+    /// Returns the unique name identifier for this fixture.
     fn name(&self) -> &str;
+    /// Returns the block number associated with this fixture.
     fn block_number(&self) -> u64;
 }
 
 /// Trait for generating stateless validation fixtures.
 #[async_trait]
-pub trait FixtureGenerator {
-    /// Generates fixtures and writes them to file.
-    async fn generate_to_path(&self, path: &Path, witness_type: WitnessType) -> Result<usize>;
+pub trait FixtureGenerator: Sync {
+    /// Generates a collection of fixtures based on the specified witness type.
+    async fn generate(&self, witness_type: WitnessType) -> Result<Vec<Box<dyn Fixture>>>;
+
+    /// Generates fixtures and writes each to a JSON file in the specified directory.
+    async fn generate_to_path(&self, path: &Path, witness_type: WitnessType) -> Result<usize> {
+        let bws = self.generate(witness_type).await?;
+        for bw in &bws {
+            let output_path = path.join(format!("{}.json", bw.name()));
+            let mut buf = Vec::new();
+            let mut serializer = serde_json::Serializer::pretty(&mut buf);
+            erased_serde::serialize(bw.as_ref(), &mut serializer).map_err(|e| {
+                WGError::FixtureSerializationError {
+                    name: bw.name().to_owned(),
+                    source: e,
+                }
+            })?;
+
+            std::fs::write(&output_path, buf).map_err(|e| WGError::FixtureWriteError {
+                path: output_path.display().to_string(),
+                source: e,
+            })?;
+        }
+        Ok(bws.len())
+    }
 }
 
 /// A stateless validation fixture containing block data and witness information.
@@ -203,31 +228,30 @@ pub struct StatelessValidationFixture<T> {
 }
 
 impl<T: Serialize + for<'de> Deserialize<'de>> StatelessValidationFixture<T> {
-    /// Serializes fixtures to pretty-printed JSON.
+    /// Serializes fixtures to a pretty-printed JSON string.
     pub fn to_json(items: &[Self]) -> Result<String> {
         Ok(serde_json::to_string_pretty(items)?)
     }
 
-    /// Deserializes fixtures from JSON string.
+    /// Deserializes fixtures from a JSON string.
     pub fn from_json(json: &str) -> Result<Vec<Self>> {
-        serde_json::from_str(json).map_err(WitnessGeneratorError::DeserializationError)
+        serde_json::from_str(json).map_err(WGError::DeserializationError)
     }
 
-    /// Serializes fixtures to JSON and writes to file.
+    /// Serializes fixtures to JSON and writes to the specified file path.
     pub fn to_path<P: AsRef<Path>>(path: P, items: &[Self]) -> Result<()> {
         let json = Self::to_json(items)?;
-        fs::write(path, json).map_err(WitnessGeneratorError::WriteFixtureError)?;
+        fs::write(path, json).map_err(WGError::WriteFixtureError)?;
         Ok(())
     }
 
-    /// Reads and deserializes fixtures from file.
+    /// Reads and deserializes fixtures from the specified file path.
     pub fn from_path<P: AsRef<Path>>(path: P) -> Result<Vec<Self>> {
         let path = path.as_ref();
-        let contents =
-            fs::read_to_string(path).map_err(|e| WitnessGeneratorError::ReadFixtureError {
-                path: path.display().to_string(),
-                source: e,
-            })?;
+        let contents = fs::read_to_string(path).map_err(|e| WGError::ReadFixtureError {
+            path: path.display().to_string(),
+            source: e,
+        })?;
         Self::from_json(&contents)
     }
 }

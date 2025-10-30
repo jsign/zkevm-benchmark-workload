@@ -4,17 +4,14 @@
 
 use anyhow::{Context, Result, anyhow};
 use clap::{Parser, Subcommand, ValueEnum};
-use reth_stateless::{ExecutionWitness, flat_witness::FlatExecutionWitness};
 use std::path::PathBuf;
 use tokio_util::sync::CancellationToken;
 use tracing::info;
 use tracing_subscriber::EnvFilter;
 use witness_generator::{
     FixtureGenerator,
-    eest_generator::{
-        ExecSpecTestBlocksAndWitnessBuilder, FlatWitnessSelector, TrieWitnessSelector,
-    },
-    rpc_generator::{self, RpcBlocksAndWitnessesBuilder, RpcFlatHeaderKeyValues},
+    eest_generator::EESTFixtureGeneratorBuilder,
+    rpc_generator::{RpcBlocksAndWitnessesBuilder, RpcFlatHeaderKeyValues},
 };
 
 #[derive(Parser)]
@@ -80,7 +77,7 @@ enum SourceCommand {
 
 #[derive(ValueEnum, Clone, Debug)]
 enum WitnessType {
-    Trie,
+    FullValidation,
     ExecutionOnly,
 }
 
@@ -98,14 +95,13 @@ async fn main() -> Result<()> {
     }
 
     let witness_type = match cli.witness_type {
-        WitnessType::Trie => witness_generator::WitnessType::Trie,
+        WitnessType::FullValidation => witness_generator::WitnessType::FullValidation,
         WitnessType::ExecutionOnly => witness_generator::WitnessType::ExecutionOnly,
     };
 
-    let generator = build_generator(cli.source, witness_type).await?;
-
     info!("Generating fixtures...");
-    let count = generator
+    let count = build_generator(cli.source)
+        .await?
         .generate_to_path(&cli.output_folder, witness_type)
         .await
         .context("Failed to generate blocks and witnesses")?;
@@ -115,10 +111,7 @@ async fn main() -> Result<()> {
     Ok(())
 }
 
-async fn build_generator(
-    source: SourceCommand,
-    witness_type: witness_generator::WitnessType,
-) -> Result<Box<dyn FixtureGenerator>> {
+async fn build_generator(source: SourceCommand) -> Result<Box<dyn FixtureGenerator>> {
     match source {
         SourceCommand::Tests {
             tag,
@@ -126,7 +119,7 @@ async fn build_generator(
             exclude,
             eest_fixtures_path,
         } => {
-            let mut builder = ExecSpecTestBlocksAndWitnessBuilder::default();
+            let mut builder = EESTFixtureGeneratorBuilder::default();
 
             if let Some(tag) = tag {
                 builder = builder.with_tag(tag);
@@ -141,18 +134,9 @@ async fn build_generator(
                 builder = builder.with_excludes(exclude);
             }
 
-            match witness_type {
-                witness_generator::WitnessType::Trie => Ok(Box::new(
-                    builder
-                        .build::<TrieWitnessSelector>()
-                        .context("Failed to build EEST generator")?,
-                )),
-                witness_generator::WitnessType::ExecutionOnly => Ok(Box::new(
-                    builder
-                        .build::<FlatWitnessSelector>()
-                        .context("Failed to build EEST generator")?,
-                )),
-            }
+            Ok(Box::new(
+                builder.build().context("Failed to build EEST generator")?,
+            ))
         }
         SourceCommand::Rpc {
             last_n_blocks,
