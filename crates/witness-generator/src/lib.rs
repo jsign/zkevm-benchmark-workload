@@ -22,14 +22,6 @@ pub mod rpc_generator;
 /// Error types for witness generation operations.
 #[derive(Debug, Error)]
 pub enum WGError {
-    /// Error during JSON serialization
-    #[error("failed to serialize fixtures to JSON: {0}")]
-    SerializationError(#[from] serde_json::Error),
-
-    /// Error during file I/O operations
-    #[error("I/O error: {0}")]
-    IoError(#[from] std::io::Error),
-
     /// Error reading fixtures from file
     #[error("failed to read fixtures from file at {path}: {source}")]
     ReadFixtureError {
@@ -39,14 +31,6 @@ pub enum WGError {
         source: std::io::Error,
     },
 
-    /// Error writing fixtures to file
-    #[error("failed to write fixtures to file: {0}")]
-    WriteFixtureError(std::io::Error),
-
-    /// Error deserializing fixtures from JSON
-    #[error("failed to deserialize fixtures from JSON: {0}")]
-    DeserializationError(serde_json::Error),
-
     /// EEST fixtures path does not exist
     #[error("EEST fixtures path '{0}' does not exist")]
     EestPathNotFound(String),
@@ -55,22 +39,9 @@ pub enum WGError {
     #[error("EEST fixtures path '{0}' is not a directory")]
     EestPathNotDirectory(String),
 
-    /// Failed to resolve path
-    #[error("failed to resolve path '{path}': {source}")]
-    PathResolutionError {
-        /// Path that failed to resolve
-        path: String,
-        /// Underlying I/O error
-        source: std::io::Error,
-    },
-
     /// Failed to download EEST fixtures
     #[error("failed to download EEST benchmark fixtures: {0}")]
     DownloadScriptFailed(String),
-
-    /// Failed to execute download script
-    #[error("failed to execute download script: {0}")]
-    DownloadScriptExecutionError(std::io::Error),
 
     /// Test suite path does not exist
     #[error("test suite path does not exist: {0}")]
@@ -172,6 +143,22 @@ pub enum WGError {
         /// Underlying error
         source: http::header::InvalidHeaderValue,
     },
+
+    /// Generic error for I/O, serialization, and other operations
+    #[error("{0}")]
+    Other(Box<dyn std::error::Error + Send + Sync>),
+}
+
+impl From<std::io::Error> for WGError {
+    fn from(err: std::io::Error) -> Self {
+        Self::Other(Box::new(err))
+    }
+}
+
+impl From<serde_json::Error> for WGError {
+    fn from(err: serde_json::Error) -> Self {
+        Self::Other(Box::new(err))
+    }
 }
 
 /// Result type alias for witness generation operations.
@@ -243,13 +230,13 @@ impl<T: Serialize + for<'de> Deserialize<'de>> StatelessValidationFixture<T> {
 
     /// Deserializes fixtures from a JSON string.
     pub fn from_json(json: &str) -> Result<Vec<Self>> {
-        serde_json::from_str(json).map_err(WGError::DeserializationError)
+        Ok(serde_json::from_str(json)?)
     }
 
     /// Serializes fixtures to JSON and writes to the specified file path.
     pub fn to_path<P: AsRef<Path>>(path: P, items: &[Self]) -> Result<()> {
         let json = Self::to_json(items)?;
-        fs::write(path, json).map_err(WGError::WriteFixtureError)?;
+        fs::write(path, json)?;
         Ok(())
     }
 

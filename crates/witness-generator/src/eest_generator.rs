@@ -40,12 +40,7 @@ impl EESTFixtureGeneratorBuilder {
         if !path.is_dir() {
             return Err(WGError::EestPathNotDirectory(path.display().to_string()));
         }
-        let canonical_path = path
-            .canonicalize()
-            .map_err(|e| WGError::PathResolutionError {
-                path: path.display().to_string(),
-                source: e,
-            })?;
+        let canonical_path = path.canonicalize()?;
 
         self.input_folder = Some(canonical_path);
         Ok(self)
@@ -79,9 +74,7 @@ impl EESTFixtureGeneratorBuilder {
             if let Some(tag) = tag {
                 cmd.arg(tag);
             }
-            let output = cmd
-                .output()
-                .map_err(WGError::DownloadScriptExecutionError)?;
+            let output = cmd.output()?;
 
             if !output.status.success() {
                 return Err(WGError::DownloadScriptFailed(
