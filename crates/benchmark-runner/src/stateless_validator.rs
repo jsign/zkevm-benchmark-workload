@@ -39,7 +39,7 @@ pub enum StatelessValidatorMode {
     /// Validate both execution and storage.
     FullValidation,
     /// Validate only execution.
-    OnlyExecution,
+    ExecutionOnly,
 }
 
 /// Extra information about the block being benchmarked
@@ -49,7 +49,7 @@ pub struct BlockMetadata {
 }
 impl GuestMetadata for BlockMetadata {}
 
-/// Prepares the inputs for the stateless validator benchmark.
+/// Prepares the inputs for the stateless validator guest program based on the mode.
 pub fn stateless_validator_inputs(
     input_folder: &Path,
     el: ExecutionClient,
@@ -57,49 +57,46 @@ pub fn stateless_validator_inputs(
 ) -> Result<Vec<GuestIO<BlockMetadata, ProgramOutputVerifier>>> {
     match mode {
         StatelessValidatorMode::FullValidation => {
-            generate_guest_io::<TrieWitnessIO>(input_folder, el)
+            let mut res = vec![];
+            let witnesses = read_benchmark_fixtures_folder(input_folder)?;
+            for bw in &witnesses {
+                let input = get_input_full_validation(bw, &el)?;
+                let metadata = BlockMetadata {
+                    block_used_gas: bw.stateless_input.block.gas_used,
+                };
+                let output = ProgramOutputVerifier {
+                    bw: BlockWitness::FullValidation(bw.clone()),
+                };
+                res.push(GuestIO {
+                    name: bw.name.clone(),
+                    input,
+                    metadata,
+                    output,
+                })
+            }
+            Ok(res)
         }
-        StatelessValidatorMode::OnlyExecution => {
-            generate_guest_io::<FlatWitnessIO>(input_folder, el)
+        StatelessValidatorMode::ExecutionOnly => {
+            let mut res = vec![];
+            let witnesses = read_benchmark_fixtures_folder(input_folder)?;
+            for bw in &witnesses {
+                let input = get_input_execution_only(bw, &el)?;
+                let metadata = BlockMetadata {
+                    block_used_gas: bw.stateless_input.block.gas_used,
+                };
+                let output = ProgramOutputVerifier {
+                    bw: BlockWitness::ExecutionOnly(bw.clone()),
+                };
+                res.push(GuestIO {
+                    name: bw.name.clone(),
+                    input,
+                    metadata,
+                    output,
+                })
+            }
+            Ok(res)
         }
     }
-}
-
-trait WitnessTypeIO {
-    type Witness: for<'de> Deserialize<'de> + Send;
-
-    fn get_input(
-        bw: &StatelessValidationFixture<Self::Witness>,
-        el: &ExecutionClient,
-    ) -> Result<Vec<u8>>;
-}
-
-fn generate_guest_io<WitnessIO: WitnessTypeIO>(
-    input_folder: &Path,
-    el: ExecutionClient,
-) -> Result<Vec<GuestIO<BlockMetadata, ProgramOutputVerifier>>> {
-    let guest_inputs = read_benchmark_fixtures_folder::<WitnessIO::Witness>(input_folder)?
-        .into_iter()
-        .map(|bw| {
-            let input = WitnessIO::get_input(&bw, &el)?;
-            let metadata = BlockMetadata {
-                block_used_gas: bw.stateless_input.block.gas_used,
-            };
-            let output = ProgramOutputVerifier {
-                block_hash: bw.stateless_input.block.hash_slow().0,
-                parent_hash: bw.stateless_input.block.parent_hash.0,
-                success: bw.success,
-            };
-            Ok(GuestIO {
-                name: bw.name,
-                input,
-                metadata,
-                output,
-            })
-        })
-        .collect::<Result<Vec<_>>>()?;
-
-    Ok(guest_inputs)
 }
 
 /// Reads the benchmark fixtures folder and returns a list of block and witness pairs.
@@ -132,78 +129,96 @@ where
 /// Verifies the output of the program.
 #[derive(Debug, Clone)]
 pub struct ProgramOutputVerifier {
-    block_hash: [u8; 32],
-    parent_hash: [u8; 32],
-    success: bool,
+    bw: BlockWitness,
+}
+
+#[derive(Debug, Clone)]
+enum BlockWitness {
+    ExecutionOnly(StatelessValidationFixture<FlatExecutionWitness>),
+    FullValidation(StatelessValidationFixture<ExecutionWitness>),
 }
 
 impl OutputVerifier for ProgramOutputVerifier {
     fn check_serialized(&self, _zkvm: ErezkVM, bytes: &[u8]) -> Result<OutputVerifierResult> {
-        let public_inputs = (self.block_hash, self.parent_hash, self.success);
-        let public_inputs_hash = Sha256::digest(bincode::serialize(&public_inputs).unwrap());
+        match &self.bw {
+            BlockWitness::FullValidation(bw) => {
+                let block_hash = bw.stateless_input.block.hash_slow().0;
+                let parent_hash = bw.stateless_input.block.parent_hash.0;
+                let success = bw.success;
 
-        if public_inputs_hash.as_slice() != bytes {
-            return Ok(OutputVerifierResult::Mismatch(format!(
+                let public_inputs = (block_hash, parent_hash, success);
+                let public_inputs_hash = Sha256::digest(bincode::serialize(&public_inputs)?);
+
+                if public_inputs_hash.as_slice() != bytes {
+                    return Ok(OutputVerifierResult::Mismatch(format!(
                 "Public inputs hash mismatch: expected {public_inputs_hash:?}, got {bytes:?}"
             )));
-        }
+                }
 
-        Ok(OutputVerifierResult::Match)
-    }
-}
+                Ok(OutputVerifierResult::Match)
+            }
+            BlockWitness::ExecutionOnly(bw) => {
+                let block_hash = bw.stateless_input.block.hash_slow().0;
+                let parent_hash = bw.stateless_input.block.parent_hash.0;
+                let success = bw.success;
+                let flatdb_hash: [u8; 32] =
+                    Sha256::digest(bincode::serialize(&bw.stateless_input.witness.pre_state)?)
+                        .into();
+                let public_inputs = (block_hash, parent_hash, flatdb_hash, success);
+                let public_inputs_hash = Sha256::digest(bincode::serialize(&public_inputs)?);
 
-struct FlatWitnessIO;
-impl WitnessTypeIO for FlatWitnessIO {
-    type Witness = FlatExecutionWitness;
+                if public_inputs_hash.as_slice() != bytes {
+                    return Ok(OutputVerifierResult::Mismatch(format!(
+                "Public inputs hash mismatch: expected {public_inputs_hash:?}, got {bytes:?}"
+            )));
+                }
 
-    fn get_input(
-        bw: &StatelessValidationFixture<FlatExecutionWitness>,
-        el: &ExecutionClient,
-    ) -> Result<Vec<u8>> {
-        let si = &bw.stateless_input;
-        match el {
-            ExecutionClient::Reth => reth_guest_io::io_serde()
-                .serialize(
-                    &reth_guest_io::Input::new(si.clone())
-                        .context("Failed to create Reth input")?,
-                )
-                .map_err(|e| anyhow::anyhow!("Reth serialization error: {e}")),
-            ExecutionClient::Ethrex => {
-                bail!("Ethrex client is not supported for Flat witness type")
+                Ok(OutputVerifierResult::Match)
             }
         }
     }
 }
 
-struct TrieWitnessIO;
-impl WitnessTypeIO for TrieWitnessIO {
-    type Witness = ExecutionWitness;
+fn get_input_execution_only(
+    bw: &StatelessValidationFixture<FlatExecutionWitness>,
+    el: &ExecutionClient,
+) -> Result<Vec<u8>> {
+    let si = &bw.stateless_input;
+    match el {
+        ExecutionClient::Reth => reth_guest_io::io_serde()
+            .serialize(
+                &reth_guest_io::Input::new(si.clone()).context("Failed to create Reth input")?,
+            )
+            .map_err(|e| anyhow::anyhow!("Reth serialization error: {e}")),
+        ExecutionClient::Ethrex => {
+            bail!("Ethrex client is not supported for Flat witness type")
+        }
+    }
+}
 
-    fn get_input(
-        bw: &StatelessValidationFixture<ExecutionWitness>,
-        el: &ExecutionClient,
-    ) -> Result<Vec<u8>> {
-        let si = &bw.stateless_input;
-        match el {
-            ExecutionClient::Reth => reth_guest_io::io_serde()
-                .serialize(
-                    &reth_guest_io::Input::new(si.clone())
-                        .context("Failed to create Reth input")?,
-                )
-                .map_err(|e| anyhow::anyhow!("Reth serialization error: {e}")),
-            ExecutionClient::Ethrex => {
-                let mut rlp_bytes = vec![];
-                si.block.encode(&mut rlp_bytes);
-                let (ethrex_block, _) = Block::decode_unfinished(&rlp_bytes)?;
+fn get_input_full_validation(
+    bw: &StatelessValidationFixture<ExecutionWitness>,
+    el: &ExecutionClient,
+) -> Result<Vec<u8>> {
+    let si = &bw.stateless_input;
+    match el {
+        ExecutionClient::Reth => reth_guest_io::io_serde()
+            .serialize(
+                &reth_guest_io::Input::new(si.clone()).context("Failed to create Reth input")?,
+            )
+            .map_err(|e| anyhow::anyhow!("Reth serialization error: {e}")),
+        ExecutionClient::Ethrex => {
+            let mut rlp_bytes = vec![];
+            si.block.encode(&mut rlp_bytes);
+            let (ethrex_block, _) = Block::decode_unfinished(&rlp_bytes)?;
 
-                let ethrex_program_input = ethrex_guest_program::input::ProgramInput {
-                    blocks: vec![ethrex_block],
-                    execution_witness: from_reth_witness_to_ethrex_witness(si.block.number, si)?,
-                    elasticity_multiplier: 2u64, // NOTE: Ethrex doesn't derive this value from chain config.
-                };
+            let ethrex_program_input = ethrex_guest_program::input::ProgramInput {
+                blocks: vec![ethrex_block],
+                execution_witness: from_reth_witness_to_ethrex_witness(si.block.number, si)?,
+                elasticity_multiplier: 2u64, // NOTE: Ethrex doesn't derive this value from chain config.
+            };
 
-                Ok(rkyv::to_bytes::<Error>(&ethrex_program_input)?.to_vec())
-            }
+            Ok(rkyv::to_bytes::<Error>(&ethrex_program_input)?.to_vec())
         }
     }
 }

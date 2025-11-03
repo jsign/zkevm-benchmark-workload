@@ -1,19 +1,15 @@
 //! Abstracted guest program
 
-use alloc::{boxed::Box, sync::Arc, vec::Vec};
-use core::error::Error;
+use alloc::sync::Arc;
 
-use alloy_primitives::FixedBytes;
 use ere_io_serde::IoSerde;
 use k256::sha2::{Digest, Sha256};
 use reth_chainspec::ChainSpec;
-use reth_ethereum_primitives::Block as EthBlock;
 use reth_evm_ethereum::EthEvmConfig;
 use reth_guest_io::{Input, io_serde};
 use reth_primitives_traits::Block;
 use reth_stateless::{
-    Genesis, UncompressedPublicKey, flat_witness::FlatExecutionWitness,
-    validation::stateless_validation_with_flatdb,
+    Genesis, flat_witness::FlatExecutionWitness, validation::stateless_validation_with_flatdb,
 };
 
 use crate::sdk::{SDK, ScopeMarker};
@@ -36,19 +32,30 @@ pub fn ethereum_guest<S: SDK>() {
     S::cycle_scope(ScopeMarker::Start, "public_inputs_preparation");
     let header = input.stateless_input.block.header().clone();
     let parent_hash = input.stateless_input.block.parent_hash;
+    let flatdb_hash: [u8; 32] = Sha256::digest(
+        bincode_v2::serde::encode_to_vec(
+            &input.stateless_input.witness.pre_state,
+            bincode_v2::config::legacy(),
+        )
+        .unwrap(),
+    )
+    .into();
     S::cycle_scope(ScopeMarker::End, "public_inputs_preparation");
 
-    let res = validate_block::<S>(
+    S::cycle_scope(ScopeMarker::Start, "validation");
+    let res = stateless_validation_with_flatdb::<_, _>(
         input.stateless_input.block,
+        input.public_keys,
         input.stateless_input.witness,
         chain_spec,
-        input.public_keys,
         evm_config,
     );
+    S::cycle_scope(ScopeMarker::End, "validation");
+
     S::cycle_scope(ScopeMarker::Start, "commit_public_inputs");
     match res {
-        Ok(block_hash) => {
-            let public_inputs = (block_hash.0, parent_hash.0, true);
+        Ok((block_hash, _)) => {
+            let public_inputs = (block_hash.0, parent_hash.0, flatdb_hash, true);
             let public_inputs_hash: [u8; 32] = Sha256::digest(
                 bincode_v2::serde::encode_to_vec(public_inputs, bincode_v2::config::legacy())
                     .unwrap(),
@@ -57,9 +64,7 @@ pub fn ethereum_guest<S: SDK>() {
             S::commit_output(public_inputs_hash);
         }
         Err(_err) => {
-            #[cfg(feature = "std")]
-            println!("Block validation failed: {_err}");
-            let public_inputs = (header.hash_slow().0, parent_hash.0, false);
+            let public_inputs = (header.hash_slow().0, parent_hash.0, flatdb_hash, false);
             let public_inputs_hash: [u8; 32] = Sha256::digest(
                 bincode_v2::serde::encode_to_vec(public_inputs, bincode_v2::config::legacy())
                     .unwrap(),
@@ -69,24 +74,4 @@ pub fn ethereum_guest<S: SDK>() {
         }
     }
     S::cycle_scope(ScopeMarker::End, "commit_public_inputs");
-}
-
-fn validate_block<S: SDK>(
-    block: EthBlock,
-    witness: FlatExecutionWitness,
-    chain_spec: Arc<ChainSpec>,
-    public_keys: Vec<UncompressedPublicKey>,
-    evm_config: EthEvmConfig,
-) -> Result<FixedBytes<32>, Box<dyn Error>> {
-    S::cycle_scope(ScopeMarker::Start, "validation");
-    let (block_hash, _) = stateless_validation_with_flatdb::<_, _>(
-        block,
-        public_keys,
-        witness,
-        chain_spec,
-        evm_config,
-    )?;
-    S::cycle_scope(ScopeMarker::End, "validation");
-
-    Ok(block_hash)
 }

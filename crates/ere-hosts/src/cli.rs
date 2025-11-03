@@ -80,7 +80,7 @@ pub enum StatelessValidatorMode {
     /// Validate both execution and storage
     FullValidation,
     /// Validate only execution
-    OnlyExecution,
+    ExecutionOnly,
 }
 
 /// Encoding formats for block encoding length program
@@ -107,11 +107,11 @@ impl ExecutionClient {
         let path = match (self, mode) {
             (Self::Reth, StatelessValidatorMode::FullValidation) => "stateless-validator/reth",
             (Self::Ethrex, StatelessValidatorMode::FullValidation) => "stateless-validator/ethrex",
-            (Self::Reth, StatelessValidatorMode::OnlyExecution) => {
+            (Self::Reth, StatelessValidatorMode::ExecutionOnly) => {
                 "stateless-validator-execution/reth"
             }
-            (Self::Ethrex, StatelessValidatorMode::OnlyExecution) => {
-                bail!("Ethrex client is not supported for OnlyExecution mode")
+            (Self::Ethrex, StatelessValidatorMode::ExecutionOnly) => {
+                bail!("Ethrex client is not supported for ExecutionOnly mode")
             }
         };
         Ok(PathBuf::from_str(path).unwrap())
@@ -176,7 +176,7 @@ impl From<StatelessValidatorMode> for stateless_validator::StatelessValidatorMod
     fn from(mode: StatelessValidatorMode) -> Self {
         match mode {
             StatelessValidatorMode::FullValidation => Self::FullValidation,
-            StatelessValidatorMode::OnlyExecution => Self::OnlyExecution,
+            StatelessValidatorMode::ExecutionOnly => Self::ExecutionOnly,
         }
     }
 }

@@ -212,7 +212,7 @@ pub trait FixtureGenerator: Sync {
 }
 
 /// A stateless validation fixture containing block data and witness information.
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct StatelessValidationFixture<T> {
     /// Name of the blockchain test case (e.g., "`ModExpAttackContract`").
     pub name: String,
