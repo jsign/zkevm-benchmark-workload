@@ -10,7 +10,10 @@ use reth_guest_io::{Input, io_serde};
 use reth_primitives_traits::Block;
 use reth_stateless::{
     Genesis,
-    flat_witness::{FlatExecutionWitness, bincode::CacheBincode},
+    flat_witness::{
+        FlatExecutionWitness,
+        bincode::{CacheBincode, HashedPostStateBincode},
+    },
     validation::stateless_validation_with_flatdb,
 };
 
@@ -54,10 +57,24 @@ pub fn ethereum_guest<S: SDK>() {
     );
     S::cycle_scope(ScopeMarker::End, "validation");
 
-    S::cycle_scope(ScopeMarker::Start, "commit_public_inputs");
     match res {
-        Ok((block_hash, _)) => {
-            let public_inputs = (block_hash.0, parent_hash.0, flatdb_hash, true);
+        Ok((block_hash, post_state)) => {
+            S::cycle_scope(ScopeMarker::Start, "hash_post_state");
+            let post_state: HashedPostStateBincode = post_state.into();
+            let post_state_hash: [u8; 32] = Sha256::digest(
+                bincode_v2::serde::encode_to_vec(post_state, bincode_v2::config::legacy()).unwrap(),
+            )
+            .into();
+            S::cycle_scope(ScopeMarker::End, "hash_post_state");
+
+            S::cycle_scope(ScopeMarker::Start, "commit_public_inputs");
+            let public_inputs = (
+                block_hash.0,
+                parent_hash.0,
+                flatdb_hash,
+                post_state_hash,
+                true,
+            );
             let public_inputs_hash: [u8; 32] = Sha256::digest(
                 bincode_v2::serde::encode_to_vec(public_inputs, bincode_v2::config::legacy())
                     .unwrap(),

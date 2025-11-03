@@ -1,8 +1,9 @@
 //! Stateless validator guest program.
 
-use std::{convert::TryInto, path::Path};
+use std::{convert::TryInto, path::Path, sync::Arc};
 
 use alloy_eips::eip6110::MAINNET_DEPOSIT_CONTRACT_ADDRESS;
+use alloy_genesis::Genesis;
 use alloy_rlp::Encodable;
 use anyhow::{bail, Context, Result};
 use ere_dockerized::ErezkVM;
@@ -12,9 +13,16 @@ use ethrex_common::{
     H160,
 };
 use ethrex_rlp::decode::RLPDecode;
+use guest_libs::senders::recover_signers;
 use rayon::iter::{IntoParallelIterator, ParallelIterator};
+use reth_chainspec::ChainSpec;
+use reth_evm_ethereum::EthEvmConfig;
 use reth_stateless::{
-    flat_witness::{bincode::CacheBincode, FlatExecutionWitness},
+    flat_witness::{
+        bincode::{CacheBincode, HashedPostStateBincode},
+        FlatExecutionWitness,
+    },
+    validation::stateless_validation_with_flatdb,
     ExecutionWitness, GenericStatelessInput,
 };
 use rkyv::rancor::Error;
@@ -161,6 +169,25 @@ impl OutputVerifier for ProgramOutputVerifier {
                 Ok(OutputVerifierResult::Match)
             }
             BlockWitness::ExecutionOnly(bw) => {
+                let signers = recover_signers(bw.stateless_input.block.body.transactions.iter())
+                    .map_err(|e| anyhow::anyhow!("Failed to recover signers: {}", e))?;
+                let genesis = Genesis {
+                    config: bw.stateless_input.chain_config.clone(),
+                    ..Default::default()
+                };
+                let chain_spec: Arc<ChainSpec> = Arc::new(genesis.into());
+                let evm_config = EthEvmConfig::new(chain_spec.clone());
+
+                let (_, post_state) = stateless_validation_with_flatdb(
+                    bw.stateless_input.block.clone(),
+                    signers,
+                    bw.stateless_input.witness.clone(),
+                    chain_spec,
+                    evm_config,
+                )
+                .unwrap();
+                let post_state: HashedPostStateBincode = post_state.into();
+
                 let block_hash = bw.stateless_input.block.hash_slow().0;
                 let parent_hash = bw.stateless_input.block.parent_hash.0;
                 let success = bw.success;
@@ -168,8 +195,16 @@ impl OutputVerifier for ProgramOutputVerifier {
                     &CacheBincode::from(&bw.stateless_input.witness.state),
                 )?)
                 .into();
+                let post_state_hash: [u8; 32] =
+                    Sha256::digest(bincode::serialize(&post_state)?).into();
 
-                let public_inputs = (block_hash, parent_hash, flatdb_hash, success);
+                let public_inputs = (
+                    block_hash,
+                    parent_hash,
+                    flatdb_hash,
+                    post_state_hash,
+                    success,
+                );
                 let public_inputs_hash = Sha256::digest(bincode::serialize(&public_inputs)?);
 
                 if public_inputs_hash.as_slice() != bytes {

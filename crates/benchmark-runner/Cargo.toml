@@ -21,6 +21,8 @@ alloy-eips.workspace = true
 alloy-genesis.workspace = true
 
 reth-stateless.workspace = true
+reth-chainspec.workspace = true
+reth-evm-ethereum.workspace = true
 
 ethrex-guest-program.workspace = true
 ethrex-common.workspace = true
