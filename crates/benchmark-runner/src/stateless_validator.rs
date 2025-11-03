@@ -13,7 +13,10 @@ use ethrex_common::{
 };
 use ethrex_rlp::decode::RLPDecode;
 use rayon::iter::{IntoParallelIterator, ParallelIterator};
-use reth_stateless::{flat_witness::FlatExecutionWitness, ExecutionWitness, GenericStatelessInput};
+use reth_stateless::{
+    flat_witness::{bincode::CacheBincode, FlatExecutionWitness},
+    ExecutionWitness, GenericStatelessInput,
+};
 use rkyv::rancor::Error;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
@@ -161,9 +164,11 @@ impl OutputVerifier for ProgramOutputVerifier {
                 let block_hash = bw.stateless_input.block.hash_slow().0;
                 let parent_hash = bw.stateless_input.block.parent_hash.0;
                 let success = bw.success;
-                let flatdb_hash: [u8; 32] =
-                    Sha256::digest(bincode::serialize(&bw.stateless_input.witness.pre_state)?)
-                        .into();
+                let flatdb_hash: [u8; 32] = Sha256::digest(bincode::serialize(
+                    &CacheBincode::from(&bw.stateless_input.witness.state),
+                )?)
+                .into();
+
                 let public_inputs = (block_hash, parent_hash, flatdb_hash, success);
                 let public_inputs_hash = Sha256::digest(bincode::serialize(&public_inputs)?);
 

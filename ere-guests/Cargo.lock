@@ -2313,8 +2313,8 @@ dependencies = [
  "alloy-primitives",
  "ethereum_ssz",
  "ethereum_ssz_derive",
- "reth-ethereum-primitives 1.8.2 (git+https://github.com/jsign/reth?rev=ddb9042eba68d79bbddb9f1a3c1cfa797085cad8)",
- "reth-primitives-traits 1.8.2 (git+https://github.com/jsign/reth?rev=ddb9042eba68d79bbddb9f1a3c1cfa797085cad8)",
+ "reth-ethereum-primitives 1.8.2 (git+https://github.com/jsign/reth?rev=d82cd6c4c83fa7a167714b70466fcbe39802e90c)",
+ "reth-primitives-traits 1.8.2 (git+https://github.com/jsign/reth?rev=d82cd6c4c83fa7a167714b70466fcbe39802e90c)",
  "reth-stateless",
  "serde",
  "serde_json",
@@ -4669,9 +4669,9 @@ dependencies = [
  "alloy-primitives",
  "guest-libs",
  "k256",
- "reth-ethereum-primitives 1.8.2 (git+https://github.com/jsign/reth?rev=ddb9042eba68d79bbddb9f1a3c1cfa797085cad8)",
+ "reth-ethereum-primitives 1.8.2 (git+https://github.com/jsign/reth?rev=d82cd6c4c83fa7a167714b70466fcbe39802e90c)",
  "reth-guest",
- "reth-primitives-traits 1.8.2 (git+https://github.com/jsign/reth?rev=ddb9042eba68d79bbddb9f1a3c1cfa797085cad8)",
+ "reth-primitives-traits 1.8.2 (git+https://github.com/jsign/reth?rev=d82cd6c4c83fa7a167714b70466fcbe39802e90c)",
  "reth-stateless",
  "revm",
  "riscv_common",
@@ -4681,7 +4681,7 @@ dependencies = [
 [[package]]
 name = "reth-chainspec"
 version = "1.8.2"
-source = "git+https://github.com/jsign/reth?rev=ddb9042eba68d79bbddb9f1a3c1cfa797085cad8#ddb9042eba68d79bbddb9f1a3c1cfa797085cad8"
+source = "git+https://github.com/jsign/reth?rev=d82cd6c4c83fa7a167714b70466fcbe39802e90c#d82cd6c4c83fa7a167714b70466fcbe39802e90c"
 dependencies = [
  "alloy-chains",
  "alloy-consensus",
@@ -4692,9 +4692,9 @@ dependencies = [
  "alloy-trie 0.9.1",
  "auto_impl",
  "derive_more 2.0.1",
- "reth-ethereum-forks 1.8.2 (git+https://github.com/jsign/reth?rev=ddb9042eba68d79bbddb9f1a3c1cfa797085cad8)",
- "reth-network-peers 1.8.2 (git+https://github.com/jsign/reth?rev=ddb9042eba68d79bbddb9f1a3c1cfa797085cad8)",
- "reth-primitives-traits 1.8.2 (git+https://github.com/jsign/reth?rev=ddb9042eba68d79bbddb9f1a3c1cfa797085cad8)",
+ "reth-ethereum-forks 1.8.2 (git+https://github.com/jsign/reth?rev=d82cd6c4c83fa7a167714b70466fcbe39802e90c)",
+ "reth-network-peers 1.8.2 (git+https://github.com/jsign/reth?rev=d82cd6c4c83fa7a167714b70466fcbe39802e90c)",
+ "reth-primitives-traits 1.8.2 (git+https://github.com/jsign/reth?rev=d82cd6c4c83fa7a167714b70466fcbe39802e90c)",
  "serde_json",
 ]
 
@@ -4721,7 +4721,7 @@ dependencies = [
 [[package]]
 name = "reth-codecs"
 version = "1.8.2"
-source = "git+https://github.com/jsign/reth?rev=ddb9042eba68d79bbddb9f1a3c1cfa797085cad8#ddb9042eba68d79bbddb9f1a3c1cfa797085cad8"
+source = "git+https://github.com/jsign/reth?rev=d82cd6c4c83fa7a167714b70466fcbe39802e90c#d82cd6c4c83fa7a167714b70466fcbe39802e90c"
 dependencies = [
  "alloy-consensus",
  "alloy-eips",
@@ -4739,7 +4739,7 @@ dependencies = [
 [[package]]
 name = "reth-codecs-derive"
 version = "1.8.2"
-source = "git+https://github.com/jsign/reth?rev=ddb9042eba68d79bbddb9f1a3c1cfa797085cad8#ddb9042eba68d79bbddb9f1a3c1cfa797085cad8"
+source = "git+https://github.com/jsign/reth?rev=d82cd6c4c83fa7a167714b70466fcbe39802e90c#d82cd6c4c83fa7a167714b70466fcbe39802e90c"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -4749,38 +4749,38 @@ dependencies = [
 [[package]]
 name = "reth-consensus"
 version = "1.8.2"
-source = "git+https://github.com/jsign/reth?rev=ddb9042eba68d79bbddb9f1a3c1cfa797085cad8#ddb9042eba68d79bbddb9f1a3c1cfa797085cad8"
+source = "git+https://github.com/jsign/reth?rev=d82cd6c4c83fa7a167714b70466fcbe39802e90c#d82cd6c4c83fa7a167714b70466fcbe39802e90c"
 dependencies = [
  "alloy-consensus",
  "alloy-primitives",
  "auto_impl",
- "reth-execution-types 1.8.2 (git+https://github.com/jsign/reth?rev=ddb9042eba68d79bbddb9f1a3c1cfa797085cad8)",
- "reth-primitives-traits 1.8.2 (git+https://github.com/jsign/reth?rev=ddb9042eba68d79bbddb9f1a3c1cfa797085cad8)",
+ "reth-execution-types 1.8.2 (git+https://github.com/jsign/reth?rev=d82cd6c4c83fa7a167714b70466fcbe39802e90c)",
+ "reth-primitives-traits 1.8.2 (git+https://github.com/jsign/reth?rev=d82cd6c4c83fa7a167714b70466fcbe39802e90c)",
  "thiserror 2.0.16",
 ]
 
 [[package]]
 name = "reth-consensus-common"
 version = "1.8.2"
-source = "git+https://github.com/jsign/reth?rev=ddb9042eba68d79bbddb9f1a3c1cfa797085cad8#ddb9042eba68d79bbddb9f1a3c1cfa797085cad8"
+source = "git+https://github.com/jsign/reth?rev=d82cd6c4c83fa7a167714b70466fcbe39802e90c#d82cd6c4c83fa7a167714b70466fcbe39802e90c"
 dependencies = [
  "alloy-consensus",
  "alloy-eips",
- "reth-chainspec 1.8.2 (git+https://github.com/jsign/reth?rev=ddb9042eba68d79bbddb9f1a3c1cfa797085cad8)",
+ "reth-chainspec 1.8.2 (git+https://github.com/jsign/reth?rev=d82cd6c4c83fa7a167714b70466fcbe39802e90c)",
  "reth-consensus",
- "reth-primitives-traits 1.8.2 (git+https://github.com/jsign/reth?rev=ddb9042eba68d79bbddb9f1a3c1cfa797085cad8)",
+ "reth-primitives-traits 1.8.2 (git+https://github.com/jsign/reth?rev=d82cd6c4c83fa7a167714b70466fcbe39802e90c)",
 ]
 
 [[package]]
 name = "reth-db-models"
 version = "1.8.2"
-source = "git+https://github.com/jsign/reth?rev=ddb9042eba68d79bbddb9f1a3c1cfa797085cad8#ddb9042eba68d79bbddb9f1a3c1cfa797085cad8"
+source = "git+https://github.com/jsign/reth?rev=d82cd6c4c83fa7a167714b70466fcbe39802e90c#d82cd6c4c83fa7a167714b70466fcbe39802e90c"
 dependencies = [
  "alloy-eips",
  "alloy-primitives",
  "bytes",
  "reth-codecs",
- "reth-primitives-traits 1.8.2 (git+https://github.com/jsign/reth?rev=ddb9042eba68d79bbddb9f1a3c1cfa797085cad8)",
+ "reth-primitives-traits 1.8.2 (git+https://github.com/jsign/reth?rev=d82cd6c4c83fa7a167714b70466fcbe39802e90c)",
  "serde",
 ]
 
@@ -4797,34 +4797,34 @@ dependencies = [
 [[package]]
 name = "reth-errors"
 version = "1.8.2"
-source = "git+https://github.com/jsign/reth?rev=ddb9042eba68d79bbddb9f1a3c1cfa797085cad8#ddb9042eba68d79bbddb9f1a3c1cfa797085cad8"
+source = "git+https://github.com/jsign/reth?rev=d82cd6c4c83fa7a167714b70466fcbe39802e90c#d82cd6c4c83fa7a167714b70466fcbe39802e90c"
 dependencies = [
  "reth-consensus",
  "reth-execution-errors",
- "reth-storage-errors 1.8.2 (git+https://github.com/jsign/reth?rev=ddb9042eba68d79bbddb9f1a3c1cfa797085cad8)",
+ "reth-storage-errors 1.8.2 (git+https://github.com/jsign/reth?rev=d82cd6c4c83fa7a167714b70466fcbe39802e90c)",
  "thiserror 2.0.16",
 ]
 
 [[package]]
 name = "reth-ethereum-consensus"
 version = "1.8.2"
-source = "git+https://github.com/jsign/reth?rev=ddb9042eba68d79bbddb9f1a3c1cfa797085cad8#ddb9042eba68d79bbddb9f1a3c1cfa797085cad8"
+source = "git+https://github.com/jsign/reth?rev=d82cd6c4c83fa7a167714b70466fcbe39802e90c#d82cd6c4c83fa7a167714b70466fcbe39802e90c"
 dependencies = [
  "alloy-consensus",
  "alloy-eips",
  "alloy-primitives",
- "reth-chainspec 1.8.2 (git+https://github.com/jsign/reth?rev=ddb9042eba68d79bbddb9f1a3c1cfa797085cad8)",
+ "reth-chainspec 1.8.2 (git+https://github.com/jsign/reth?rev=d82cd6c4c83fa7a167714b70466fcbe39802e90c)",
  "reth-consensus",
  "reth-consensus-common",
- "reth-execution-types 1.8.2 (git+https://github.com/jsign/reth?rev=ddb9042eba68d79bbddb9f1a3c1cfa797085cad8)",
- "reth-primitives-traits 1.8.2 (git+https://github.com/jsign/reth?rev=ddb9042eba68d79bbddb9f1a3c1cfa797085cad8)",
+ "reth-execution-types 1.8.2 (git+https://github.com/jsign/reth?rev=d82cd6c4c83fa7a167714b70466fcbe39802e90c)",
+ "reth-primitives-traits 1.8.2 (git+https://github.com/jsign/reth?rev=d82cd6c4c83fa7a167714b70466fcbe39802e90c)",
  "tracing",
 ]
 
 [[package]]
 name = "reth-ethereum-forks"
 version = "1.8.2"
-source = "git+https://github.com/jsign/reth?rev=ddb9042eba68d79bbddb9f1a3c1cfa797085cad8#ddb9042eba68d79bbddb9f1a3c1cfa797085cad8"
+source = "git+https://github.com/jsign/reth?rev=d82cd6c4c83fa7a167714b70466fcbe39802e90c#d82cd6c4c83fa7a167714b70466fcbe39802e90c"
 dependencies = [
  "alloy-eip2124",
  "alloy-hardforks",
@@ -4848,7 +4848,7 @@ dependencies = [
 [[package]]
 name = "reth-ethereum-primitives"
 version = "1.8.2"
-source = "git+https://github.com/jsign/reth?rev=ddb9042eba68d79bbddb9f1a3c1cfa797085cad8#ddb9042eba68d79bbddb9f1a3c1cfa797085cad8"
+source = "git+https://github.com/jsign/reth?rev=d82cd6c4c83fa7a167714b70466fcbe39802e90c#d82cd6c4c83fa7a167714b70466fcbe39802e90c"
 dependencies = [
  "alloy-consensus",
  "alloy-eips",
@@ -4857,7 +4857,7 @@ dependencies = [
  "alloy-rpc-types-eth",
  "alloy-serde",
  "reth-codecs",
- "reth-primitives-traits 1.8.2 (git+https://github.com/jsign/reth?rev=ddb9042eba68d79bbddb9f1a3c1cfa797085cad8)",
+ "reth-primitives-traits 1.8.2 (git+https://github.com/jsign/reth?rev=d82cd6c4c83fa7a167714b70466fcbe39802e90c)",
  "serde",
  "serde_with",
 ]
@@ -4877,7 +4877,7 @@ dependencies = [
 [[package]]
 name = "reth-evm"
 version = "1.8.2"
-source = "git+https://github.com/jsign/reth?rev=ddb9042eba68d79bbddb9f1a3c1cfa797085cad8#ddb9042eba68d79bbddb9f1a3c1cfa797085cad8"
+source = "git+https://github.com/jsign/reth?rev=d82cd6c4c83fa7a167714b70466fcbe39802e90c#d82cd6c4c83fa7a167714b70466fcbe39802e90c"
 dependencies = [
  "alloy-consensus",
  "alloy-eips",
@@ -4887,10 +4887,10 @@ dependencies = [
  "derive_more 2.0.1",
  "futures-util",
  "reth-execution-errors",
- "reth-execution-types 1.8.2 (git+https://github.com/jsign/reth?rev=ddb9042eba68d79bbddb9f1a3c1cfa797085cad8)",
- "reth-primitives-traits 1.8.2 (git+https://github.com/jsign/reth?rev=ddb9042eba68d79bbddb9f1a3c1cfa797085cad8)",
- "reth-storage-api 1.8.2 (git+https://github.com/jsign/reth?rev=ddb9042eba68d79bbddb9f1a3c1cfa797085cad8)",
- "reth-storage-errors 1.8.2 (git+https://github.com/jsign/reth?rev=ddb9042eba68d79bbddb9f1a3c1cfa797085cad8)",
+ "reth-execution-types 1.8.2 (git+https://github.com/jsign/reth?rev=d82cd6c4c83fa7a167714b70466fcbe39802e90c)",
+ "reth-primitives-traits 1.8.2 (git+https://github.com/jsign/reth?rev=d82cd6c4c83fa7a167714b70466fcbe39802e90c)",
+ "reth-storage-api 1.8.2 (git+https://github.com/jsign/reth?rev=d82cd6c4c83fa7a167714b70466fcbe39802e90c)",
+ "reth-storage-errors 1.8.2 (git+https://github.com/jsign/reth?rev=d82cd6c4c83fa7a167714b70466fcbe39802e90c)",
  "reth-trie-common",
  "revm",
 ]
@@ -4898,48 +4898,48 @@ dependencies = [
 [[package]]
 name = "reth-evm-ethereum"
 version = "1.8.2"
-source = "git+https://github.com/jsign/reth?rev=ddb9042eba68d79bbddb9f1a3c1cfa797085cad8#ddb9042eba68d79bbddb9f1a3c1cfa797085cad8"
+source = "git+https://github.com/jsign/reth?rev=d82cd6c4c83fa7a167714b70466fcbe39802e90c#d82cd6c4c83fa7a167714b70466fcbe39802e90c"
 dependencies = [
  "alloy-consensus",
  "alloy-eips",
  "alloy-evm",
  "alloy-primitives",
  "alloy-rpc-types-engine",
- "reth-chainspec 1.8.2 (git+https://github.com/jsign/reth?rev=ddb9042eba68d79bbddb9f1a3c1cfa797085cad8)",
- "reth-ethereum-forks 1.8.2 (git+https://github.com/jsign/reth?rev=ddb9042eba68d79bbddb9f1a3c1cfa797085cad8)",
- "reth-ethereum-primitives 1.8.2 (git+https://github.com/jsign/reth?rev=ddb9042eba68d79bbddb9f1a3c1cfa797085cad8)",
+ "reth-chainspec 1.8.2 (git+https://github.com/jsign/reth?rev=d82cd6c4c83fa7a167714b70466fcbe39802e90c)",
+ "reth-ethereum-forks 1.8.2 (git+https://github.com/jsign/reth?rev=d82cd6c4c83fa7a167714b70466fcbe39802e90c)",
+ "reth-ethereum-primitives 1.8.2 (git+https://github.com/jsign/reth?rev=d82cd6c4c83fa7a167714b70466fcbe39802e90c)",
  "reth-evm",
- "reth-execution-types 1.8.2 (git+https://github.com/jsign/reth?rev=ddb9042eba68d79bbddb9f1a3c1cfa797085cad8)",
- "reth-primitives-traits 1.8.2 (git+https://github.com/jsign/reth?rev=ddb9042eba68d79bbddb9f1a3c1cfa797085cad8)",
- "reth-storage-errors 1.8.2 (git+https://github.com/jsign/reth?rev=ddb9042eba68d79bbddb9f1a3c1cfa797085cad8)",
+ "reth-execution-types 1.8.2 (git+https://github.com/jsign/reth?rev=d82cd6c4c83fa7a167714b70466fcbe39802e90c)",
+ "reth-primitives-traits 1.8.2 (git+https://github.com/jsign/reth?rev=d82cd6c4c83fa7a167714b70466fcbe39802e90c)",
+ "reth-storage-errors 1.8.2 (git+https://github.com/jsign/reth?rev=d82cd6c4c83fa7a167714b70466fcbe39802e90c)",
  "revm",
 ]
 
 [[package]]
 name = "reth-execution-errors"
 version = "1.8.2"
-source = "git+https://github.com/jsign/reth?rev=ddb9042eba68d79bbddb9f1a3c1cfa797085cad8#ddb9042eba68d79bbddb9f1a3c1cfa797085cad8"
+source = "git+https://github.com/jsign/reth?rev=d82cd6c4c83fa7a167714b70466fcbe39802e90c#d82cd6c4c83fa7a167714b70466fcbe39802e90c"
 dependencies = [
  "alloy-evm",
  "alloy-primitives",
  "alloy-rlp",
  "nybbles 0.4.4",
- "reth-storage-errors 1.8.2 (git+https://github.com/jsign/reth?rev=ddb9042eba68d79bbddb9f1a3c1cfa797085cad8)",
+ "reth-storage-errors 1.8.2 (git+https://github.com/jsign/reth?rev=d82cd6c4c83fa7a167714b70466fcbe39802e90c)",
  "thiserror 2.0.16",
 ]
 
 [[package]]
 name = "reth-execution-types"
 version = "1.8.2"
-source = "git+https://github.com/jsign/reth?rev=ddb9042eba68d79bbddb9f1a3c1cfa797085cad8#ddb9042eba68d79bbddb9f1a3c1cfa797085cad8"
+source = "git+https://github.com/jsign/reth?rev=d82cd6c4c83fa7a167714b70466fcbe39802e90c#d82cd6c4c83fa7a167714b70466fcbe39802e90c"
 dependencies = [
  "alloy-consensus",
  "alloy-eips",
  "alloy-evm",
  "alloy-primitives",
  "derive_more 2.0.1",
- "reth-ethereum-primitives 1.8.2 (git+https://github.com/jsign/reth?rev=ddb9042eba68d79bbddb9f1a3c1cfa797085cad8)",
- "reth-primitives-traits 1.8.2 (git+https://github.com/jsign/reth?rev=ddb9042eba68d79bbddb9f1a3c1cfa797085cad8)",
+ "reth-ethereum-primitives 1.8.2 (git+https://github.com/jsign/reth?rev=d82cd6c4c83fa7a167714b70466fcbe39802e90c)",
+ "reth-primitives-traits 1.8.2 (git+https://github.com/jsign/reth?rev=d82cd6c4c83fa7a167714b70466fcbe39802e90c)",
  "reth-trie-common",
  "revm",
  "serde",
@@ -4971,11 +4971,11 @@ dependencies = [
  "guest-libs",
  "k256",
  "once_cell",
- "reth-chainspec 1.8.2 (git+https://github.com/jsign/reth?rev=ddb9042eba68d79bbddb9f1a3c1cfa797085cad8)",
- "reth-ethereum-primitives 1.8.2 (git+https://github.com/jsign/reth?rev=ddb9042eba68d79bbddb9f1a3c1cfa797085cad8)",
+ "reth-chainspec 1.8.2 (git+https://github.com/jsign/reth?rev=d82cd6c4c83fa7a167714b70466fcbe39802e90c)",
+ "reth-ethereum-primitives 1.8.2 (git+https://github.com/jsign/reth?rev=d82cd6c4c83fa7a167714b70466fcbe39802e90c)",
  "reth-evm-ethereum",
  "reth-guest-io",
- "reth-primitives-traits 1.8.2 (git+https://github.com/jsign/reth?rev=ddb9042eba68d79bbddb9f1a3c1cfa797085cad8)",
+ "reth-primitives-traits 1.8.2 (git+https://github.com/jsign/reth?rev=d82cd6c4c83fa7a167714b70466fcbe39802e90c)",
  "reth-stateless",
  "serde",
  "serde_with",
@@ -4996,7 +4996,7 @@ dependencies = [
 [[package]]
 name = "reth-network-peers"
 version = "1.8.2"
-source = "git+https://github.com/jsign/reth?rev=ddb9042eba68d79bbddb9f1a3c1cfa797085cad8#ddb9042eba68d79bbddb9f1a3c1cfa797085cad8"
+source = "git+https://github.com/jsign/reth?rev=d82cd6c4c83fa7a167714b70466fcbe39802e90c#d82cd6c4c83fa7a167714b70466fcbe39802e90c"
 dependencies = [
  "alloy-primitives",
  "alloy-rlp",
@@ -5029,9 +5029,9 @@ dependencies = [
  "openvm-algebra-guest",
  "openvm-ecc-guest",
  "openvm-keccak256",
- "reth-ethereum-primitives 1.8.2 (git+https://github.com/jsign/reth?rev=ddb9042eba68d79bbddb9f1a3c1cfa797085cad8)",
+ "reth-ethereum-primitives 1.8.2 (git+https://github.com/jsign/reth?rev=d82cd6c4c83fa7a167714b70466fcbe39802e90c)",
  "reth-guest",
- "reth-primitives-traits 1.8.2 (git+https://github.com/jsign/reth?rev=ddb9042eba68d79bbddb9f1a3c1cfa797085cad8)",
+ "reth-primitives-traits 1.8.2 (git+https://github.com/jsign/reth?rev=d82cd6c4c83fa7a167714b70466fcbe39802e90c)",
  "reth-stateless",
  "sha2",
 ]
@@ -5045,9 +5045,9 @@ dependencies = [
  "k256",
  "kzg-rs",
  "pico-sdk",
- "reth-ethereum-primitives 1.8.2 (git+https://github.com/jsign/reth?rev=ddb9042eba68d79bbddb9f1a3c1cfa797085cad8)",
+ "reth-ethereum-primitives 1.8.2 (git+https://github.com/jsign/reth?rev=d82cd6c4c83fa7a167714b70466fcbe39802e90c)",
  "reth-guest",
- "reth-primitives-traits 1.8.2 (git+https://github.com/jsign/reth?rev=ddb9042eba68d79bbddb9f1a3c1cfa797085cad8)",
+ "reth-primitives-traits 1.8.2 (git+https://github.com/jsign/reth?rev=d82cd6c4c83fa7a167714b70466fcbe39802e90c)",
  "reth-stateless",
  "revm",
 ]
@@ -5055,7 +5055,7 @@ dependencies = [
 [[package]]
 name = "reth-primitives-traits"
 version = "1.8.2"
-source = "git+https://github.com/jsign/reth?rev=ddb9042eba68d79bbddb9f1a3c1cfa797085cad8#ddb9042eba68d79bbddb9f1a3c1cfa797085cad8"
+source = "git+https://github.com/jsign/reth?rev=d82cd6c4c83fa7a167714b70466fcbe39802e90c#d82cd6c4c83fa7a167714b70466fcbe39802e90c"
 dependencies = [
  "alloy-consensus",
  "alloy-eips",
@@ -5103,7 +5103,7 @@ dependencies = [
 [[package]]
 name = "reth-prune-types"
 version = "1.8.2"
-source = "git+https://github.com/jsign/reth?rev=ddb9042eba68d79bbddb9f1a3c1cfa797085cad8#ddb9042eba68d79bbddb9f1a3c1cfa797085cad8"
+source = "git+https://github.com/jsign/reth?rev=d82cd6c4c83fa7a167714b70466fcbe39802e90c#d82cd6c4c83fa7a167714b70466fcbe39802e90c"
 dependencies = [
  "alloy-primitives",
  "derive_more 2.0.1",
@@ -5125,13 +5125,13 @@ dependencies = [
 [[package]]
 name = "reth-revm"
 version = "1.8.2"
-source = "git+https://github.com/jsign/reth?rev=ddb9042eba68d79bbddb9f1a3c1cfa797085cad8#ddb9042eba68d79bbddb9f1a3c1cfa797085cad8"
+source = "git+https://github.com/jsign/reth?rev=d82cd6c4c83fa7a167714b70466fcbe39802e90c#d82cd6c4c83fa7a167714b70466fcbe39802e90c"
 dependencies = [
  "alloy-primitives",
- "reth-execution-types 1.8.2 (git+https://github.com/jsign/reth?rev=ddb9042eba68d79bbddb9f1a3c1cfa797085cad8)",
- "reth-primitives-traits 1.8.2 (git+https://github.com/jsign/reth?rev=ddb9042eba68d79bbddb9f1a3c1cfa797085cad8)",
- "reth-storage-api 1.8.2 (git+https://github.com/jsign/reth?rev=ddb9042eba68d79bbddb9f1a3c1cfa797085cad8)",
- "reth-storage-errors 1.8.2 (git+https://github.com/jsign/reth?rev=ddb9042eba68d79bbddb9f1a3c1cfa797085cad8)",
+ "reth-execution-types 1.8.2 (git+https://github.com/jsign/reth?rev=d82cd6c4c83fa7a167714b70466fcbe39802e90c)",
+ "reth-primitives-traits 1.8.2 (git+https://github.com/jsign/reth?rev=d82cd6c4c83fa7a167714b70466fcbe39802e90c)",
+ "reth-storage-api 1.8.2 (git+https://github.com/jsign/reth?rev=d82cd6c4c83fa7a167714b70466fcbe39802e90c)",
+ "reth-storage-errors 1.8.2 (git+https://github.com/jsign/reth?rev=d82cd6c4c83fa7a167714b70466fcbe39802e90c)",
  "reth-trie",
  "revm",
 ]
@@ -5155,9 +5155,9 @@ dependencies = [
  "alloy-primitives",
  "guest-libs",
  "k256",
- "reth-ethereum-primitives 1.8.2 (git+https://github.com/jsign/reth?rev=ddb9042eba68d79bbddb9f1a3c1cfa797085cad8)",
+ "reth-ethereum-primitives 1.8.2 (git+https://github.com/jsign/reth?rev=d82cd6c4c83fa7a167714b70466fcbe39802e90c)",
  "reth-guest",
- "reth-primitives-traits 1.8.2 (git+https://github.com/jsign/reth?rev=ddb9042eba68d79bbddb9f1a3c1cfa797085cad8)",
+ "reth-primitives-traits 1.8.2 (git+https://github.com/jsign/reth?rev=d82cd6c4c83fa7a167714b70466fcbe39802e90c)",
  "reth-stateless",
  "revm",
  "risc0-zkvm",
@@ -5170,9 +5170,9 @@ dependencies = [
  "alloy-primitives",
  "guest-libs",
  "k256",
- "reth-ethereum-primitives 1.8.2 (git+https://github.com/jsign/reth?rev=ddb9042eba68d79bbddb9f1a3c1cfa797085cad8)",
+ "reth-ethereum-primitives 1.8.2 (git+https://github.com/jsign/reth?rev=d82cd6c4c83fa7a167714b70466fcbe39802e90c)",
  "reth-guest",
- "reth-primitives-traits 1.8.2 (git+https://github.com/jsign/reth?rev=ddb9042eba68d79bbddb9f1a3c1cfa797085cad8)",
+ "reth-primitives-traits 1.8.2 (git+https://github.com/jsign/reth?rev=d82cd6c4c83fa7a167714b70466fcbe39802e90c)",
  "reth-stateless",
  "revm",
  "sp1-zkvm",
@@ -5187,9 +5187,9 @@ dependencies = [
  "alloy-primitives",
  "guest-libs",
  "k256",
- "reth-ethereum-primitives 1.8.2 (git+https://github.com/jsign/reth?rev=ddb9042eba68d79bbddb9f1a3c1cfa797085cad8)",
+ "reth-ethereum-primitives 1.8.2 (git+https://github.com/jsign/reth?rev=d82cd6c4c83fa7a167714b70466fcbe39802e90c)",
  "reth-guest",
- "reth-primitives-traits 1.8.2 (git+https://github.com/jsign/reth?rev=ddb9042eba68d79bbddb9f1a3c1cfa797085cad8)",
+ "reth-primitives-traits 1.8.2 (git+https://github.com/jsign/reth?rev=d82cd6c4c83fa7a167714b70466fcbe39802e90c)",
  "reth-stateless",
  "revm",
  "sp1-zkvm",
@@ -5200,7 +5200,7 @@ dependencies = [
 [[package]]
 name = "reth-stages-types"
 version = "1.8.2"
-source = "git+https://github.com/jsign/reth?rev=ddb9042eba68d79bbddb9f1a3c1cfa797085cad8#ddb9042eba68d79bbddb9f1a3c1cfa797085cad8"
+source = "git+https://github.com/jsign/reth?rev=d82cd6c4c83fa7a167714b70466fcbe39802e90c#d82cd6c4c83fa7a167714b70466fcbe39802e90c"
 dependencies = [
  "alloy-primitives",
  "bytes",
@@ -5221,7 +5221,7 @@ dependencies = [
 [[package]]
 name = "reth-stateless"
 version = "1.8.2"
-source = "git+https://github.com/jsign/reth?rev=ddb9042eba68d79bbddb9f1a3c1cfa797085cad8#ddb9042eba68d79bbddb9f1a3c1cfa797085cad8"
+source = "git+https://github.com/jsign/reth?rev=d82cd6c4c83fa7a167714b70466fcbe39802e90c#d82cd6c4c83fa7a167714b70466fcbe39802e90c"
 dependencies = [
  "alloy-consensus",
  "alloy-genesis",
@@ -5231,15 +5231,15 @@ dependencies = [
  "alloy-trie 0.9.1",
  "itertools 0.14.0",
  "k256",
- "reth-chainspec 1.8.2 (git+https://github.com/jsign/reth?rev=ddb9042eba68d79bbddb9f1a3c1cfa797085cad8)",
+ "reth-chainspec 1.8.2 (git+https://github.com/jsign/reth?rev=d82cd6c4c83fa7a167714b70466fcbe39802e90c)",
  "reth-consensus",
  "reth-errors",
  "reth-ethereum-consensus",
- "reth-ethereum-primitives 1.8.2 (git+https://github.com/jsign/reth?rev=ddb9042eba68d79bbddb9f1a3c1cfa797085cad8)",
+ "reth-ethereum-primitives 1.8.2 (git+https://github.com/jsign/reth?rev=d82cd6c4c83fa7a167714b70466fcbe39802e90c)",
  "reth-evm",
- "reth-execution-types 1.8.2 (git+https://github.com/jsign/reth?rev=ddb9042eba68d79bbddb9f1a3c1cfa797085cad8)",
- "reth-primitives-traits 1.8.2 (git+https://github.com/jsign/reth?rev=ddb9042eba68d79bbddb9f1a3c1cfa797085cad8)",
- "reth-revm 1.8.2 (git+https://github.com/jsign/reth?rev=ddb9042eba68d79bbddb9f1a3c1cfa797085cad8)",
+ "reth-execution-types 1.8.2 (git+https://github.com/jsign/reth?rev=d82cd6c4c83fa7a167714b70466fcbe39802e90c)",
+ "reth-primitives-traits 1.8.2 (git+https://github.com/jsign/reth?rev=d82cd6c4c83fa7a167714b70466fcbe39802e90c)",
+ "reth-revm 1.8.2 (git+https://github.com/jsign/reth?rev=d82cd6c4c83fa7a167714b70466fcbe39802e90c)",
  "reth-trie-common",
  "reth-trie-sparse",
  "serde",
@@ -5251,7 +5251,7 @@ dependencies = [
 [[package]]
 name = "reth-static-file-types"
 version = "1.8.2"
-source = "git+https://github.com/jsign/reth?rev=ddb9042eba68d79bbddb9f1a3c1cfa797085cad8#ddb9042eba68d79bbddb9f1a3c1cfa797085cad8"
+source = "git+https://github.com/jsign/reth?rev=d82cd6c4c83fa7a167714b70466fcbe39802e90c#d82cd6c4c83fa7a167714b70466fcbe39802e90c"
 dependencies = [
  "alloy-primitives",
  "derive_more 2.0.1",
@@ -5273,21 +5273,21 @@ dependencies = [
 [[package]]
 name = "reth-storage-api"
 version = "1.8.2"
-source = "git+https://github.com/jsign/reth?rev=ddb9042eba68d79bbddb9f1a3c1cfa797085cad8#ddb9042eba68d79bbddb9f1a3c1cfa797085cad8"
+source = "git+https://github.com/jsign/reth?rev=d82cd6c4c83fa7a167714b70466fcbe39802e90c#d82cd6c4c83fa7a167714b70466fcbe39802e90c"
 dependencies = [
  "alloy-consensus",
  "alloy-eips",
  "alloy-primitives",
  "alloy-rpc-types-engine",
  "auto_impl",
- "reth-chainspec 1.8.2 (git+https://github.com/jsign/reth?rev=ddb9042eba68d79bbddb9f1a3c1cfa797085cad8)",
- "reth-db-models 1.8.2 (git+https://github.com/jsign/reth?rev=ddb9042eba68d79bbddb9f1a3c1cfa797085cad8)",
- "reth-ethereum-primitives 1.8.2 (git+https://github.com/jsign/reth?rev=ddb9042eba68d79bbddb9f1a3c1cfa797085cad8)",
- "reth-execution-types 1.8.2 (git+https://github.com/jsign/reth?rev=ddb9042eba68d79bbddb9f1a3c1cfa797085cad8)",
- "reth-primitives-traits 1.8.2 (git+https://github.com/jsign/reth?rev=ddb9042eba68d79bbddb9f1a3c1cfa797085cad8)",
- "reth-prune-types 1.8.2 (git+https://github.com/jsign/reth?rev=ddb9042eba68d79bbddb9f1a3c1cfa797085cad8)",
- "reth-stages-types 1.8.2 (git+https://github.com/jsign/reth?rev=ddb9042eba68d79bbddb9f1a3c1cfa797085cad8)",
- "reth-storage-errors 1.8.2 (git+https://github.com/jsign/reth?rev=ddb9042eba68d79bbddb9f1a3c1cfa797085cad8)",
+ "reth-chainspec 1.8.2 (git+https://github.com/jsign/reth?rev=d82cd6c4c83fa7a167714b70466fcbe39802e90c)",
+ "reth-db-models 1.8.2 (git+https://github.com/jsign/reth?rev=d82cd6c4c83fa7a167714b70466fcbe39802e90c)",
+ "reth-ethereum-primitives 1.8.2 (git+https://github.com/jsign/reth?rev=d82cd6c4c83fa7a167714b70466fcbe39802e90c)",
+ "reth-execution-types 1.8.2 (git+https://github.com/jsign/reth?rev=d82cd6c4c83fa7a167714b70466fcbe39802e90c)",
+ "reth-primitives-traits 1.8.2 (git+https://github.com/jsign/reth?rev=d82cd6c4c83fa7a167714b70466fcbe39802e90c)",
+ "reth-prune-types 1.8.2 (git+https://github.com/jsign/reth?rev=d82cd6c4c83fa7a167714b70466fcbe39802e90c)",
+ "reth-stages-types 1.8.2 (git+https://github.com/jsign/reth?rev=d82cd6c4c83fa7a167714b70466fcbe39802e90c)",
+ "reth-storage-errors 1.8.2 (git+https://github.com/jsign/reth?rev=d82cd6c4c83fa7a167714b70466fcbe39802e90c)",
  "reth-trie-common",
  "revm-database",
 ]
@@ -5317,15 +5317,15 @@ dependencies = [
 [[package]]
 name = "reth-storage-errors"
 version = "1.8.2"
-source = "git+https://github.com/jsign/reth?rev=ddb9042eba68d79bbddb9f1a3c1cfa797085cad8#ddb9042eba68d79bbddb9f1a3c1cfa797085cad8"
+source = "git+https://github.com/jsign/reth?rev=d82cd6c4c83fa7a167714b70466fcbe39802e90c#d82cd6c4c83fa7a167714b70466fcbe39802e90c"
 dependencies = [
  "alloy-eips",
  "alloy-primitives",
  "alloy-rlp",
  "derive_more 2.0.1",
- "reth-primitives-traits 1.8.2 (git+https://github.com/jsign/reth?rev=ddb9042eba68d79bbddb9f1a3c1cfa797085cad8)",
- "reth-prune-types 1.8.2 (git+https://github.com/jsign/reth?rev=ddb9042eba68d79bbddb9f1a3c1cfa797085cad8)",
- "reth-static-file-types 1.8.2 (git+https://github.com/jsign/reth?rev=ddb9042eba68d79bbddb9f1a3c1cfa797085cad8)",
+ "reth-primitives-traits 1.8.2 (git+https://github.com/jsign/reth?rev=d82cd6c4c83fa7a167714b70466fcbe39802e90c)",
+ "reth-prune-types 1.8.2 (git+https://github.com/jsign/reth?rev=d82cd6c4c83fa7a167714b70466fcbe39802e90c)",
+ "reth-static-file-types 1.8.2 (git+https://github.com/jsign/reth?rev=d82cd6c4c83fa7a167714b70466fcbe39802e90c)",
  "revm-database-interface",
  "thiserror 2.0.16",
 ]
@@ -5349,7 +5349,7 @@ dependencies = [
 [[package]]
 name = "reth-trie"
 version = "1.8.2"
-source = "git+https://github.com/jsign/reth?rev=ddb9042eba68d79bbddb9f1a3c1cfa797085cad8#ddb9042eba68d79bbddb9f1a3c1cfa797085cad8"
+source = "git+https://github.com/jsign/reth?rev=d82cd6c4c83fa7a167714b70466fcbe39802e90c#d82cd6c4c83fa7a167714b70466fcbe39802e90c"
 dependencies = [
  "alloy-consensus",
  "alloy-eips",
@@ -5359,9 +5359,9 @@ dependencies = [
  "auto_impl",
  "itertools 0.14.0",
  "reth-execution-errors",
- "reth-primitives-traits 1.8.2 (git+https://github.com/jsign/reth?rev=ddb9042eba68d79bbddb9f1a3c1cfa797085cad8)",
- "reth-stages-types 1.8.2 (git+https://github.com/jsign/reth?rev=ddb9042eba68d79bbddb9f1a3c1cfa797085cad8)",
- "reth-storage-errors 1.8.2 (git+https://github.com/jsign/reth?rev=ddb9042eba68d79bbddb9f1a3c1cfa797085cad8)",
+ "reth-primitives-traits 1.8.2 (git+https://github.com/jsign/reth?rev=d82cd6c4c83fa7a167714b70466fcbe39802e90c)",
+ "reth-stages-types 1.8.2 (git+https://github.com/jsign/reth?rev=d82cd6c4c83fa7a167714b70466fcbe39802e90c)",
+ "reth-storage-errors 1.8.2 (git+https://github.com/jsign/reth?rev=d82cd6c4c83fa7a167714b70466fcbe39802e90c)",
  "reth-trie-common",
  "reth-trie-sparse",
  "revm-database",
@@ -5371,7 +5371,7 @@ dependencies = [
 [[package]]
 name = "reth-trie-common"
 version = "1.8.2"
-source = "git+https://github.com/jsign/reth?rev=ddb9042eba68d79bbddb9f1a3c1cfa797085cad8#ddb9042eba68d79bbddb9f1a3c1cfa797085cad8"
+source = "git+https://github.com/jsign/reth?rev=d82cd6c4c83fa7a167714b70466fcbe39802e90c#d82cd6c4c83fa7a167714b70466fcbe39802e90c"
 dependencies = [
  "alloy-consensus",
  "alloy-primitives",
@@ -5384,7 +5384,7 @@ dependencies = [
  "nybbles 0.4.4",
  "rayon",
  "reth-codecs",
- "reth-primitives-traits 1.8.2 (git+https://github.com/jsign/reth?rev=ddb9042eba68d79bbddb9f1a3c1cfa797085cad8)",
+ "reth-primitives-traits 1.8.2 (git+https://github.com/jsign/reth?rev=d82cd6c4c83fa7a167714b70466fcbe39802e90c)",
  "revm-database",
  "serde",
 ]
@@ -5392,14 +5392,14 @@ dependencies = [
 [[package]]
 name = "reth-trie-sparse"
 version = "1.8.2"
-source = "git+https://github.com/jsign/reth?rev=ddb9042eba68d79bbddb9f1a3c1cfa797085cad8#ddb9042eba68d79bbddb9f1a3c1cfa797085cad8"
+source = "git+https://github.com/jsign/reth?rev=d82cd6c4c83fa7a167714b70466fcbe39802e90c#d82cd6c4c83fa7a167714b70466fcbe39802e90c"
 dependencies = [
  "alloy-primitives",
  "alloy-rlp",
  "alloy-trie 0.9.1",
  "auto_impl",
  "reth-execution-errors",
- "reth-primitives-traits 1.8.2 (git+https://github.com/jsign/reth?rev=ddb9042eba68d79bbddb9f1a3c1cfa797085cad8)",
+ "reth-primitives-traits 1.8.2 (git+https://github.com/jsign/reth?rev=d82cd6c4c83fa7a167714b70466fcbe39802e90c)",
  "reth-trie-common",
  "smallvec",
  "tracing",
@@ -5413,9 +5413,9 @@ dependencies = [
  "bincode 1.3.3",
  "guest-libs",
  "k256",
- "reth-ethereum-primitives 1.8.2 (git+https://github.com/jsign/reth?rev=ddb9042eba68d79bbddb9f1a3c1cfa797085cad8)",
+ "reth-ethereum-primitives 1.8.2 (git+https://github.com/jsign/reth?rev=d82cd6c4c83fa7a167714b70466fcbe39802e90c)",
  "reth-guest",
- "reth-primitives-traits 1.8.2 (git+https://github.com/jsign/reth?rev=ddb9042eba68d79bbddb9f1a3c1cfa797085cad8)",
+ "reth-primitives-traits 1.8.2 (git+https://github.com/jsign/reth?rev=d82cd6c4c83fa7a167714b70466fcbe39802e90c)",
  "reth-stateless",
  "revm",
  "sha2",
@@ -5425,7 +5425,7 @@ dependencies = [
 [[package]]
 name = "reth-zstd-compressors"
 version = "1.8.2"
-source = "git+https://github.com/jsign/reth?rev=ddb9042eba68d79bbddb9f1a3c1cfa797085cad8#ddb9042eba68d79bbddb9f1a3c1cfa797085cad8"
+source = "git+https://github.com/jsign/reth?rev=d82cd6c4c83fa7a167714b70466fcbe39802e90c#d82cd6c4c83fa7a167714b70466fcbe39802e90c"
 dependencies = [
  "zstd",
 ]
@@ -6497,8 +6497,8 @@ dependencies = [
  "ere-io-serde",
  "ethereum_ssz",
  "guest-libs",
- "reth-ethereum-primitives 1.8.2 (git+https://github.com/jsign/reth?rev=ddb9042eba68d79bbddb9f1a3c1cfa797085cad8)",
- "reth-primitives-traits 1.8.2 (git+https://github.com/jsign/reth?rev=ddb9042eba68d79bbddb9f1a3c1cfa797085cad8)",
+ "reth-ethereum-primitives 1.8.2 (git+https://github.com/jsign/reth?rev=d82cd6c4c83fa7a167714b70466fcbe39802e90c)",
+ "reth-primitives-traits 1.8.2 (git+https://github.com/jsign/reth?rev=d82cd6c4c83fa7a167714b70466fcbe39802e90c)",
  "serde",
  "serde_with",
  "sp1-zkvm",

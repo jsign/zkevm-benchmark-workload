@@ -9,7 +9,9 @@ use reth_evm_ethereum::EthEvmConfig;
 use reth_guest_io::{Input, io_serde};
 use reth_primitives_traits::Block;
 use reth_stateless::{
-    Genesis, flat_witness::FlatExecutionWitness, validation::stateless_validation_with_flatdb,
+    Genesis,
+    flat_witness::{FlatExecutionWitness, bincode::CacheBincode},
+    validation::stateless_validation_with_flatdb,
 };
 
 use crate::sdk::{SDK, ScopeMarker};
@@ -34,7 +36,7 @@ pub fn ethereum_guest<S: SDK>() {
     let parent_hash = input.stateless_input.block.parent_hash;
     let flatdb_hash: [u8; 32] = Sha256::digest(
         bincode_v2::serde::encode_to_vec(
-            &input.stateless_input.witness.pre_state,
+            CacheBincode::from(&input.stateless_input.witness.state),
             bincode_v2::config::legacy(),
         )
         .unwrap(),
