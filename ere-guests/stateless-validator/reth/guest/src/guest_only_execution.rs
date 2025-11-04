@@ -6,19 +6,19 @@ use ere_io_serde::IoSerde;
 use k256::sha2::{Digest, Sha256};
 use reth_chainspec::ChainSpec;
 use reth_evm_ethereum::EthEvmConfig;
-use reth_guest_io::{Input, io_serde};
+use reth_guest_io::{io_serde, Input};
 use reth_primitives_traits::Block;
 use reth_stateless::{
-    Genesis,
     flat_witness::{
-        FlatExecutionWitness,
         bincode::{CacheBincode, HashedPostStateBincode},
+        FlatExecutionWitness,
     },
     validation::stateless_validation_with_flatdb,
+    Genesis,
 };
 use reth_trie_common::{HashedPostState, KeccakKeyHasher};
 
-use crate::sdk::{SDK, ScopeMarker};
+use crate::sdk::{ScopeMarker, SDK};
 
 /// Main entry point for the guest program.
 pub fn ethereum_guest<S: SDK>() {
@@ -35,18 +35,29 @@ pub fn ethereum_guest<S: SDK>() {
     let evm_config = EthEvmConfig::new(chain_spec.clone());
     S::cycle_scope(ScopeMarker::End, "read_input");
 
-    S::cycle_scope(ScopeMarker::Start, "public_inputs_preparation");
+    S::cycle_scope(ScopeMarker::Start, "public_inputs_preparation_base");
     let header = input.stateless_input.block.header().clone();
     let parent_hash = input.stateless_input.block.parent_hash;
-    let flatdb_hash: [u8; 32] = Sha256::digest(
-        bincode_v2::serde::encode_to_vec(
-            CacheBincode::from(&input.stateless_input.witness.state),
-            bincode_v2::config::legacy(),
-        )
-        .unwrap(),
+    S::cycle_scope(ScopeMarker::End, "public_inputs_preparation_base");
+    S::cycle_scope(
+        ScopeMarker::Start,
+        "public_inputs_preparation_flatdb_serialization",
+    );
+    let flatdb_serialized = bincode_v2::serde::encode_to_vec(
+        CacheBincode::from(&input.stateless_input.witness.state),
+        bincode_v2::config::legacy(),
     )
-    .into();
-    S::cycle_scope(ScopeMarker::End, "public_inputs_preparation");
+    .unwrap();
+    S::cycle_scope(
+        ScopeMarker::End,
+        "public_inputs_preparation_flatdb_serialization",
+    );
+    S::cycle_scope(
+        ScopeMarker::Start,
+        "public_inputs_preparation_flatdb_hashing",
+    );
+    let flatdb_hash: [u8; 32] = Sha256::digest(flatdb_serialized).into();
+    S::cycle_scope(ScopeMarker::End, "public_inputs_preparation_flatdb_hashing");
 
     S::cycle_scope(ScopeMarker::Start, "validation");
     let res = stateless_validation_with_flatdb::<_, _>(
@@ -60,7 +71,10 @@ pub fn ethereum_guest<S: SDK>() {
 
     match res {
         Ok((block_hash, output)) => {
-            S::cycle_scope(ScopeMarker::Start, "hash_post_state");
+            S::cycle_scope(
+                ScopeMarker::Start,
+                "public_inputs_preparation_poststate_hashing",
+            );
             let post_state =
                 HashedPostState::from_bundle_state::<KeccakKeyHasher>(&output.state.state);
             let post_state: HashedPostStateBincode = post_state.into();
@@ -68,7 +82,10 @@ pub fn ethereum_guest<S: SDK>() {
                 bincode_v2::serde::encode_to_vec(post_state, bincode_v2::config::legacy()).unwrap(),
             )
             .into();
-            S::cycle_scope(ScopeMarker::End, "hash_post_state");
+            S::cycle_scope(
+                ScopeMarker::End,
+                "public_inputs_preparation_poststate_hashing",
+            );
 
             S::cycle_scope(ScopeMarker::Start, "commit_public_inputs");
             let public_inputs = (
@@ -84,6 +101,7 @@ pub fn ethereum_guest<S: SDK>() {
             )
             .into();
             S::commit_output(public_inputs_hash);
+            S::cycle_scope(ScopeMarker::End, "commit_public_inputs");
         }
         Err(_err) => {
             let public_inputs = (header.hash_slow().0, parent_hash.0, flatdb_hash, false);
@@ -95,5 +113,4 @@ pub fn ethereum_guest<S: SDK>() {
             S::commit_output(public_inputs_hash);
         }
     }
-    S::cycle_scope(ScopeMarker::End, "commit_public_inputs");
 }
