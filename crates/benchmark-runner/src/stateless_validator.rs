@@ -186,7 +186,7 @@ impl OutputVerifier for ProgramOutputVerifier {
                     chain_spec,
                     evm_config,
                 )
-                .unwrap();
+                .map_err(|e| anyhow::anyhow!("Raw stateless validation execution failed: {}", e))?;
                 let post_state =
                     HashedPostState::from_bundle_state::<KeccakKeyHasher>(&output.state.state);
                 let post_state: HashedPostStateBincode = post_state.into();
