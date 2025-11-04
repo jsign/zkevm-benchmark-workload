@@ -13,7 +13,7 @@ use jsonrpsee::{
 use reth_chainspec::{Chain, HOLESKY, HOODI, MAINNET, NamedChain, SEPOLIA};
 use reth_ethereum_primitives::TransactionSigned;
 use reth_rpc_api::{DebugApiClient, EthApiClient};
-use reth_stateless::{GenericStatelessInput, flat_witness::FlatExecutionWitness};
+use reth_stateless::GenericStatelessInput;
 use std::{path::Path, str::FromStr};
 use tokio_util::sync::CancellationToken;
 
@@ -128,7 +128,7 @@ impl FixtureGenerator for RpcFixtureGenerator {
             self.save_to_path(&bws, path)?;
             bws.len()
         } else {
-            self.fetch_live(path).await?
+            self.fetch_live(path, witness_type).await?
         };
 
         Ok(count)
@@ -150,7 +150,7 @@ impl FixtureGenerator for RpcFixtureGenerator {
 
         // Handle one block case
         if let Some(block) = self.block {
-            return Ok(vec![self.fetch_specific_block(block).await?]);
+            return Ok(vec![self.fetch_specific_block(block, witness_type).await?]);
         }
 
         Ok(vec![])
@@ -234,7 +234,7 @@ impl RpcFixtureGenerator {
 
                     Box::new(StatelessValidationFixture {
                         name: format!("rpc_block_{block_num}"),
-                        stateless_input: GenericStatelessInput::<_> {
+                        stateless_input: GenericStatelessInput {
                             block: block.into_consensus(),
                             witness,
                             chain_config: self.chain_config.clone(),
@@ -251,7 +251,7 @@ impl RpcFixtureGenerator {
                     .map_err(|e| WGError::RpcError(e.to_string()))?;
                     Box::new(StatelessValidationFixture {
                         name: format!("rpc_block_{block_num}"),
-                        stateless_input: GenericStatelessInput::<_> {
+                        stateless_input: GenericStatelessInput {
                             block: block.into_consensus(),
                             witness,
                             chain_config: self.chain_config.clone(),
@@ -274,15 +274,11 @@ impl RpcFixtureGenerator {
     ///
     /// # Errors
     /// Returns an error if the RPC call fails or if the block cannot be found.
-    async fn fetch_specific_block(&self, block_num: u64) -> Result<Box<dyn Fixture>> {
-        // Fetch the execution witness for the given block
-        let witness = DebugApiClient::<()>::debug_flat_execution_witness(
-            &self.client,
-            BlockNumberOrTag::Number(block_num),
-        )
-        .await
-        .map_err(|e| WGError::RpcError(e.to_string()))?;
-
+    async fn fetch_specific_block(
+        &self,
+        block_num: u64,
+        witness_type: WitnessType,
+    ) -> Result<Box<dyn Fixture>> {
         // Fetch the block details
         let block =
             EthApiClient::<
@@ -297,17 +293,47 @@ impl RpcFixtureGenerator {
             .map_err(|e| WGError::RpcError(e.to_string()))?
             .ok_or(WGError::BlockNotFoundForNumber(block_num))?;
 
-        let bw = StatelessValidationFixture {
-            name: format!("rpc_block_{block_num}"),
-            stateless_input: GenericStatelessInput::<FlatExecutionWitness> {
-                block: block.into_consensus(),
-                witness,
-                chain_config: self.chain_config.clone(),
-            },
-            success: true,
+        // Fetch the execution witness for the given block
+        let bw = match witness_type {
+            WitnessType::FullValidation => {
+                let witness = DebugApiClient::<()>::debug_execution_witness(
+                    &self.client,
+                    BlockNumberOrTag::Number(block_num),
+                )
+                .await
+                .map_err(|e| WGError::RpcError(e.to_string()))?;
+
+                Box::new(StatelessValidationFixture {
+                    name: format!("rpc_block_{block_num}"),
+                    stateless_input: GenericStatelessInput {
+                        block: block.into_consensus(),
+                        witness,
+                        chain_config: self.chain_config.clone(),
+                    },
+                    success: true,
+                }) as Box<dyn Fixture>
+            }
+            WitnessType::ExecutionOnly => {
+                let witness = DebugApiClient::<()>::debug_flat_execution_witness(
+                    &self.client,
+                    BlockNumberOrTag::Number(block_num),
+                )
+                .await
+                .map_err(|e| WGError::RpcError(e.to_string()))?;
+
+                Box::new(StatelessValidationFixture {
+                    name: format!("rpc_block_{block_num}"),
+                    stateless_input: GenericStatelessInput {
+                        block: block.into_consensus(),
+                        witness,
+                        chain_config: self.chain_config.clone(),
+                    },
+                    success: true,
+                }) as Box<dyn Fixture>
+            }
         };
 
-        Ok(Box::new(bw))
+        Ok(bw)
     }
 
     /// Fetches blocks from a specific block number to the latest block and their execution witnesses.
@@ -321,7 +347,11 @@ impl RpcFixtureGenerator {
     /// # Errors
     ///
     /// Returns an error if any RPC call fails or if blocks cannot be found.
-    async fn fetch_from_block(&self, block_num: u64) -> Result<Vec<Box<dyn Fixture>>> {
+    async fn fetch_from_block(
+        &self,
+        block_num: u64,
+        witness_type: WitnessType,
+    ) -> Result<Vec<Box<dyn Fixture>>> {
         let latest_block = EthApiClient::<
             TransactionRequest,
             Transaction,
@@ -336,7 +366,7 @@ impl RpcFixtureGenerator {
 
         let mut bws = Vec::new();
         for n in block_num..=latest_block.header.number {
-            bws.push(self.fetch_specific_block(n).await?);
+            bws.push(self.fetch_specific_block(n, witness_type).await?);
         }
 
         Ok(bws)
@@ -358,7 +388,7 @@ impl RpcFixtureGenerator {
     ///
     /// Returns an error if the cancellation token is not set, if RPC calls fail,
     /// or if file writing fails.
-    async fn fetch_live(&self, path: &Path) -> Result<usize> {
+    async fn fetch_live(&self, path: &Path, witness_type: WitnessType) -> Result<usize> {
         let latest_block = EthApiClient::<
             TransactionRequest,
             Transaction,
@@ -385,7 +415,7 @@ impl RpcFixtureGenerator {
                     info!("Stopped listening for new blocks.");
                     break;
                 }
-                res = self.fetch_from_block(next_block_num) => {
+                res = self.fetch_from_block(next_block_num, witness_type) => {
                     match res {
                         Ok(bws) => {
                             if !bws.is_empty() {
