@@ -23,7 +23,7 @@ struct Cli {
     #[arg(short, long, default_value = "zkevm-fixtures-input")]
     output_folder: PathBuf,
 
-    #[arg(short, long, default_value = "trie")]
+    #[arg(short, long, default_value = "full-validation")]
     witness_type: WitnessType,
 
     /// Source of blocks and witnesses
