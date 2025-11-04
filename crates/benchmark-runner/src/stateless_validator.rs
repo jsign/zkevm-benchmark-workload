@@ -25,6 +25,7 @@ use reth_stateless::{
     validation::stateless_validation_with_flatdb,
     ExecutionWitness, GenericStatelessInput,
 };
+use reth_trie_common::{HashedPostState, KeccakKeyHasher};
 use rkyv::rancor::Error;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
@@ -178,7 +179,7 @@ impl OutputVerifier for ProgramOutputVerifier {
                 let chain_spec: Arc<ChainSpec> = Arc::new(genesis.into());
                 let evm_config = EthEvmConfig::new(chain_spec.clone());
 
-                let (_, post_state) = stateless_validation_with_flatdb(
+                let (_, output) = stateless_validation_with_flatdb(
                     bw.stateless_input.block.clone(),
                     signers,
                     bw.stateless_input.witness.clone(),
@@ -186,6 +187,8 @@ impl OutputVerifier for ProgramOutputVerifier {
                     evm_config,
                 )
                 .unwrap();
+                let post_state =
+                    HashedPostState::from_bundle_state::<KeccakKeyHasher>(&output.state.state);
                 let post_state: HashedPostStateBincode = post_state.into();
 
                 let block_hash = bw.stateless_input.block.hash_slow().0;

@@ -16,6 +16,7 @@ use reth_stateless::{
     },
     validation::stateless_validation_with_flatdb,
 };
+use reth_trie_common::{HashedPostState, KeccakKeyHasher};
 
 use crate::sdk::{SDK, ScopeMarker};
 
@@ -58,8 +59,10 @@ pub fn ethereum_guest<S: SDK>() {
     S::cycle_scope(ScopeMarker::End, "validation");
 
     match res {
-        Ok((block_hash, post_state)) => {
+        Ok((block_hash, output)) => {
             S::cycle_scope(ScopeMarker::Start, "hash_post_state");
+            let post_state =
+                HashedPostState::from_bundle_state::<KeccakKeyHasher>(&output.state.state);
             let post_state: HashedPostStateBincode = post_state.into();
             let post_state_hash: [u8; 32] = Sha256::digest(
                 bincode_v2::serde::encode_to_vec(post_state, bincode_v2::config::legacy()).unwrap(),

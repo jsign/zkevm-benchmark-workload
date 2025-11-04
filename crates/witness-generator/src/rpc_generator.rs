@@ -83,7 +83,7 @@ impl RpcBlocksAndWitnessesBuilder {
             .build(&self.url)
             .map_err(|e| WGError::RpcError(e.to_string()))?;
 
-        let chain_id = EthApiClient::<(), (), (), (), ()>::chain_id(&client)
+        let chain_id = EthApiClient::<(), (), (), (), (), ()>::chain_id(&client)
             .await
             .map_err(|e| WGError::RpcError(e.to_string()))?
             .ok_or(WGError::ChainIdFetchError)?;
@@ -174,11 +174,14 @@ impl RpcFixtureGenerator {
             return Ok(vec![]);
         }
 
-        let latest_block = EthApiClient::<TransactionRequest, Transaction, Block, Receipt, Header>::block_by_number(
-            &self.client,
-            BlockNumberOrTag::Latest,
-            false,
-        )
+        let latest_block = EthApiClient::<
+            TransactionRequest,
+            Transaction,
+            Block,
+            Receipt,
+            Header,
+            TransactionSigned,
+        >::block_by_number(&self.client, BlockNumberOrTag::Latest, false)
         .await
         .map_err(|e| WGError::RpcError(e.to_string()))?
         .ok_or(WGError::LatestBlockFetchError)?;
@@ -192,11 +195,14 @@ impl RpcFixtureGenerator {
         hashes.push((latest_block.header.number, latest_block.header.hash));
         for n in (block_num_start..block_num_end).rev() {
             let block_hash = hashes.last().unwrap().1;
-            let block = EthApiClient::<TransactionRequest, Transaction, Block, Receipt, Header>::block_by_hash(
-                &self.client,
-                block_hash,
-                true,
-            )
+            let block = EthApiClient::<
+                TransactionRequest,
+                Transaction,
+                Block,
+                Receipt,
+                Header,
+                TransactionSigned,
+            >::block_by_hash(&self.client, block_hash, true)
             .await
             .map_err(|e| WGError::RpcError(e.to_string()))?
             .ok_or(WGError::BlockNotFoundForNumber(n))?;
@@ -211,6 +217,7 @@ impl RpcFixtureGenerator {
                 Block<TransactionSigned>,
                 Receipt,
                 Header,
+                TransactionSigned,
             >::block_by_hash(&self.client, block_hash, true)
             .await
             .map_err(|e| WGError::RpcError(e.to_string()))?
@@ -284,6 +291,7 @@ impl RpcFixtureGenerator {
                 Block<TransactionSigned>,
                 Receipt,
                 Header,
+                TransactionSigned,
             >::block_by_number(&self.client, BlockNumberOrTag::Number(block_num), true)
             .await
             .map_err(|e| WGError::RpcError(e.to_string()))?
@@ -314,11 +322,14 @@ impl RpcFixtureGenerator {
     ///
     /// Returns an error if any RPC call fails or if blocks cannot be found.
     async fn fetch_from_block(&self, block_num: u64) -> Result<Vec<Box<dyn Fixture>>> {
-        let latest_block = EthApiClient::<TransactionRequest, Transaction, Block, Receipt, Header>::block_by_number(
-            &self.client,
-            BlockNumberOrTag::Latest,
-            false,
-        )
+        let latest_block = EthApiClient::<
+            TransactionRequest,
+            Transaction,
+            Block,
+            Receipt,
+            Header,
+            TransactionSigned,
+        >::block_by_number(&self.client, BlockNumberOrTag::Latest, false)
         .await
         .map_err(|e| WGError::RpcError(e.to_string()))?
         .ok_or(WGError::LatestBlockFetchError)?;
@@ -348,11 +359,14 @@ impl RpcFixtureGenerator {
     /// Returns an error if the cancellation token is not set, if RPC calls fail,
     /// or if file writing fails.
     async fn fetch_live(&self, path: &Path) -> Result<usize> {
-        let latest_block = EthApiClient::<TransactionRequest, Transaction, Block, Receipt, Header>::block_by_number(
-            &self.client,
-            BlockNumberOrTag::Latest,
-            false,
-        )
+        let latest_block = EthApiClient::<
+            TransactionRequest,
+            Transaction,
+            Block,
+            Receipt,
+            Header,
+            TransactionSigned,
+        >::block_by_number(&self.client, BlockNumberOrTag::Latest, false)
         .await
         .map_err(|e| WGError::RpcError(e.to_string()))?
         .ok_or(WGError::LatestBlockFetchError)?;
@@ -568,6 +582,7 @@ mod test {
             Block,
             Receipt,
             Header,
+            TransactionSigned,
         >::block_by_number(
             &build_base_rpc().build().await.unwrap().client,
             BlockNumberOrTag::Latest,
