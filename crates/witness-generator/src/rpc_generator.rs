@@ -2,19 +2,28 @@
 
 use crate::{Fixture, FixtureGenerator, Result, StatelessValidationFixture, WGError, WitnessType};
 use alloy_eips::BlockNumberOrTag;
-use alloy_genesis::ChainConfig;
+use alloy_genesis::{ChainConfig, Genesis};
+use alloy_primitives::B256;
 use alloy_rpc_types_eth::{Block, Header, Receipt, Transaction, TransactionRequest};
+use anyhow::Context;
 use async_trait::async_trait;
+use guest_libs::senders::recover_signers;
 use http::{HeaderName, HeaderValue};
 use jsonrpsee::{
     http_client::{HeaderMap, HttpClient, HttpClientBuilder},
     tracing::{error, info},
 };
-use reth_chainspec::{Chain, HOLESKY, HOODI, MAINNET, NamedChain, SEPOLIA};
+use reth_chainspec::{Chain, ChainSpec, HOLESKY, HOODI, MAINNET, NamedChain, SEPOLIA};
 use reth_ethereum_primitives::TransactionSigned;
+use reth_evm_ethereum::EthEvmConfig;
 use reth_rpc_api::{DebugApiClient, EthApiClient};
-use reth_stateless::GenericStatelessInput;
-use std::{path::Path, str::FromStr};
+use reth_stateless::{
+    GenericStatelessInput, StatelessInput,
+    flat_witness::{self, FlatExecutionWitness, PrePostStateWitness},
+    validation::stateless_validation_with_flatdb,
+};
+use reth_trie_common::{HashedPostState, KeccakKeyHasher};
+use std::{path::Path, str::FromStr, sync::Arc};
 use tokio_util::sync::CancellationToken;
 
 /// Builder for configuring an RPC client that fetches blocks and witnesses.
@@ -191,10 +200,10 @@ impl RpcFixtureGenerator {
             latest_block.header.number,
         );
 
-        let mut hashes = Vec::with_capacity(last_n_blocks);
-        hashes.push((latest_block.header.number, latest_block.header.hash));
+        let mut block_hashes = Vec::with_capacity(last_n_blocks);
+        block_hashes.push(latest_block.header.hash);
         for n in (block_num_start..block_num_end).rev() {
-            let block_hash = hashes.last().unwrap().1;
+            let block_hash = block_hashes.last().unwrap();
             let block = EthApiClient::<
                 TransactionRequest,
                 Transaction,
@@ -202,15 +211,15 @@ impl RpcFixtureGenerator {
                 Receipt,
                 Header,
                 TransactionSigned,
-            >::block_by_hash(&self.client, block_hash, true)
+            >::block_by_hash(&self.client, *block_hash, true)
             .await
             .map_err(|e| WGError::RpcError(e.to_string()))?
             .ok_or(WGError::BlockNotFoundForNumber(n))?;
-            hashes.push((n, block.header.parent_hash));
+            block_hashes.push(block.header.parent_hash);
         }
 
-        let mut blocks_and_witnesses = Vec::with_capacity(hashes.len());
-        for (block_num, block_hash) in hashes {
+        let mut blocks_and_witnesses = Vec::with_capacity(block_hashes.len());
+        for hash in block_hashes {
             let block = EthApiClient::<
                 TransactionRequest,
                 Transaction,
@@ -218,48 +227,19 @@ impl RpcFixtureGenerator {
                 Receipt,
                 Header,
                 TransactionSigned,
-            >::block_by_hash(&self.client, block_hash, true)
+            >::block_by_hash(&self.client, hash, true)
             .await
             .map_err(|e| WGError::RpcError(e.to_string()))?
-            .ok_or(WGError::BlockNotFoundForHash(block_hash.to_string()))?;
+            .ok_or(WGError::BlockNotFoundForHash(hash.to_string()))?;
 
-            let bw = match witness_type {
-                WitnessType::FullValidation => {
-                    let witness = DebugApiClient::<()>::debug_execution_witness_by_block_hash(
-                        &self.client,
-                        block_hash,
-                    )
-                    .await
-                    .map_err(|e| WGError::RpcError(e.to_string()))?;
-
-                    Box::new(StatelessValidationFixture {
-                        name: format!("rpc_block_{block_num}"),
-                        stateless_input: GenericStatelessInput {
-                            block: block.into_consensus(),
-                            witness,
-                            chain_config: self.chain_config.clone(),
-                        },
-                        success: true,
-                    }) as Box<dyn Fixture>
-                }
-                WitnessType::ExecutionOnly => {
-                    let witness = DebugApiClient::<()>::debug_flat_execution_witness_by_block_hash(
-                        &self.client,
-                        block_hash,
-                    )
-                    .await
-                    .map_err(|e| WGError::RpcError(e.to_string()))?;
-                    Box::new(StatelessValidationFixture {
-                        name: format!("rpc_block_{block_num}"),
-                        stateless_input: GenericStatelessInput {
-                            block: block.into_consensus(),
-                            witness,
-                            chain_config: self.chain_config.clone(),
-                        },
-                        success: true,
-                    }) as Box<dyn Fixture>
-                }
-            };
+            let bw = gen_stateless_input(
+                &self.chain_config,
+                &block,
+                &self.client,
+                block.hash(),
+                witness_type,
+            )
+            .await?;
 
             blocks_and_witnesses.push(bw);
         }
@@ -293,47 +273,14 @@ impl RpcFixtureGenerator {
             .map_err(|e| WGError::RpcError(e.to_string()))?
             .ok_or(WGError::BlockNotFoundForNumber(block_num))?;
 
-        // Fetch the execution witness for the given block
-        let bw = match witness_type {
-            WitnessType::FullValidation => {
-                let witness = DebugApiClient::<()>::debug_execution_witness(
-                    &self.client,
-                    BlockNumberOrTag::Number(block_num),
-                )
-                .await
-                .map_err(|e| WGError::RpcError(e.to_string()))?;
-
-                Box::new(StatelessValidationFixture {
-                    name: format!("rpc_block_{block_num}"),
-                    stateless_input: GenericStatelessInput {
-                        block: block.into_consensus(),
-                        witness,
-                        chain_config: self.chain_config.clone(),
-                    },
-                    success: true,
-                }) as Box<dyn Fixture>
-            }
-            WitnessType::ExecutionOnly => {
-                let witness = DebugApiClient::<()>::debug_flat_execution_witness(
-                    &self.client,
-                    BlockNumberOrTag::Number(block_num),
-                )
-                .await
-                .map_err(|e| WGError::RpcError(e.to_string()))?;
-
-                Box::new(StatelessValidationFixture {
-                    name: format!("rpc_block_{block_num}"),
-                    stateless_input: GenericStatelessInput {
-                        block: block.into_consensus(),
-                        witness,
-                        chain_config: self.chain_config.clone(),
-                    },
-                    success: true,
-                }) as Box<dyn Fixture>
-            }
-        };
-
-        Ok(bw)
+        gen_stateless_input(
+            &self.chain_config,
+            &block,
+            &self.client,
+            block.hash(),
+            witness_type,
+        )
+        .await
     }
 
     /// Fetches blocks from a specific block number to the latest block and their execution witnesses.
@@ -537,6 +484,107 @@ impl TryFrom<RpcFlatHeaderKeyValues> for HeaderMap {
 
         Ok(header_map)
     }
+}
+
+/// Generates the post state from the provided stateless input.
+pub fn generate_post_state(
+    si: GenericStatelessInput<FlatExecutionWitness>,
+) -> anyhow::Result<HashedPostState> {
+    let signers = recover_signers(si.block.body.transactions.iter())
+        .map_err(|e| anyhow::anyhow!("Failed to recover signers: {}", e))?;
+    let genesis = Genesis {
+        config: si.chain_config.clone(),
+        ..Default::default()
+    };
+    let chain_spec: Arc<ChainSpec> = Arc::new(genesis.into());
+    let evm_config = EthEvmConfig::new(chain_spec.clone());
+
+    let (_, output) = stateless_validation_with_flatdb(
+        si.block.clone(),
+        signers,
+        si.witness,
+        chain_spec,
+        evm_config,
+    )
+    .map_err(|e| anyhow::anyhow!("Raw stateless validation execution failed: {}", e))?;
+    Ok(HashedPostState::from_bundle_state::<KeccakKeyHasher>(
+        &output.state.state,
+    ))
+}
+
+async fn gen_stateless_input(
+    chain_config: &ChainConfig,
+    block: &Block<TransactionSigned>,
+    client: &HttpClient,
+    block_hash: B256,
+    witness_type: WitnessType,
+) -> Result<Box<dyn Fixture>> {
+    let res = match witness_type {
+        WitnessType::FullValidation => {
+            let witness =
+                DebugApiClient::<()>::debug_execution_witness_by_block_hash(client, block_hash)
+                    .await
+                    .map_err(|e| WGError::RpcError(e.to_string()))?;
+
+            Box::new(StatelessValidationFixture {
+                name: format!("rpc_block_{}", block.number()),
+                stateless_input: GenericStatelessInput {
+                    block: block.clone().into_consensus(),
+                    witness,
+                    chain_config: chain_config.clone(),
+                },
+                success: true,
+            }) as Box<dyn Fixture>
+        }
+        WitnessType::ExecutionOnly => {
+            let witness = DebugApiClient::<()>::debug_flat_execution_witness_by_block_hash(
+                client, block_hash,
+            )
+            .await
+            .map_err(|e| WGError::RpcError(e.to_string()))?;
+            Box::new(StatelessValidationFixture {
+                name: format!("rpc_block_{}", block.number()),
+                stateless_input: GenericStatelessInput {
+                    block: block.clone().into_consensus(),
+                    witness,
+                    chain_config: chain_config.clone(),
+                },
+                success: true,
+            }) as Box<dyn Fixture>
+        }
+        WitnessType::PrePostStateCheck => {
+            let trie_witness =
+                DebugApiClient::<()>::debug_execution_witness_by_block_hash(client, block_hash)
+                    .await
+                    .map_err(|e| WGError::RpcError(e.to_string()))?;
+
+            let exec_only_witness =
+                DebugApiClient::<()>::debug_flat_execution_witness_by_block_hash(
+                    client, block_hash,
+                )
+                .await
+                .map_err(|e| WGError::RpcError(e.to_string()))?;
+            Box::new(StatelessValidationFixture {
+                name: format!("rpc_block_{}", block.number()),
+                stateless_input: GenericStatelessInput {
+                    block: block.clone().into_consensus(),
+                    witness: PrePostStateWitness {
+                        trie: trie_witness,
+                        pre_state: exec_only_witness.clone().state,
+                        post_state: generate_post_state(GenericStatelessInput {
+                            block: block.clone().into_consensus(),
+                            witness: exec_only_witness,
+                            chain_config: chain_config.clone(),
+                        })
+                        .map_err(|e| WGError::PostStateGenerationError { source: e.into() })?,
+                    },
+                    chain_config: chain_config.clone(),
+                },
+                success: true,
+            }) as Box<dyn Fixture>
+        }
+    };
+    Ok(res)
 }
 
 #[cfg(test)]

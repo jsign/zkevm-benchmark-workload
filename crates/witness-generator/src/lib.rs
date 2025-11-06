@@ -144,6 +144,14 @@ pub enum WGError {
         source: http::header::InvalidHeaderValue,
     },
 
+    /// Error generating post state
+    #[error("error generating post state: {source}")]
+    PostStateGenerationError {
+        /// Underlying error
+        #[source]
+        source: Box<dyn std::error::Error + Send + Sync>,
+    },
+
     /// Generic error for I/O, serialization, and other operations
     #[error("{0}")]
     Other(Box<dyn std::error::Error + Send + Sync>),
@@ -172,6 +180,8 @@ pub enum WitnessType {
     FullValidation,
     /// Execution-only witness
     ExecutionOnly,
+    /// Pre-post-state check witness
+    PrePostStateCheck,
 }
 
 /// Trait representing a fixture with serialization support and metadata access.

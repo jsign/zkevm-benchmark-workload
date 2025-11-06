@@ -1,9 +1,8 @@
 //! Stateless validator guest program.
 
-use std::{convert::TryInto, path::Path, sync::Arc};
+use std::{convert::TryInto, path::Path};
 
 use alloy_eips::eip6110::MAINNET_DEPOSIT_CONTRACT_ADDRESS;
-use alloy_genesis::Genesis;
 use alloy_rlp::Encodable;
 use anyhow::{bail, Context, Result};
 use ere_dockerized::ErezkVM;
@@ -13,25 +12,20 @@ use ethrex_common::{
     H160,
 };
 use ethrex_rlp::decode::RLPDecode;
-use guest_libs::senders::recover_signers;
 use rayon::iter::{IntoParallelIterator, ParallelIterator};
-use reth_chainspec::ChainSpec;
-use reth_evm_ethereum::EthEvmConfig;
 use reth_stateless::{
     flat_witness::{
         bincode::{CacheBincode, HashedPostStateBincode},
-        FlatExecutionWitness,
+        FlatExecutionWitness, PrePostStateWitness,
     },
-    validation::stateless_validation_with_flatdb,
     ExecutionWitness, GenericStatelessInput,
 };
-use reth_trie_common::{HashedPostState, KeccakKeyHasher};
 use rkyv::rancor::Error;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use strum::{AsRefStr, EnumString};
 use walkdir::WalkDir;
-use witness_generator::StatelessValidationFixture;
+use witness_generator::{rpc_generator::generate_post_state, StatelessValidationFixture};
 
 use crate::guest_programs::{GuestIO, GuestMetadata, OutputVerifier, OutputVerifierResult};
 
@@ -52,6 +46,8 @@ pub enum StatelessValidatorMode {
     FullValidation,
     /// Validate only execution.
     ExecutionOnly,
+    /// Validate both pre-state and post-state.
+    PreStateAndPostState,
 }
 
 /// Extra information about the block being benchmarked
@@ -108,6 +104,26 @@ pub fn stateless_validator_inputs(
             }
             Ok(res)
         }
+        StatelessValidatorMode::PreStateAndPostState => {
+            let mut res = vec![];
+            let witnesses = read_benchmark_fixtures_folder(input_folder)?;
+            for bw in &witnesses {
+                let input = get_input_prepost_state(bw, &el)?;
+                let metadata = BlockMetadata {
+                    block_used_gas: bw.stateless_input.block.gas_used,
+                };
+                let output = ProgramOutputVerifier {
+                    bw: BlockWitness::PrePostState(bw.clone()),
+                };
+                res.push(GuestIO {
+                    name: bw.name.clone(),
+                    input,
+                    metadata,
+                    output,
+                })
+            }
+            Ok(res)
+        }
     }
 }
 
@@ -146,8 +162,9 @@ pub struct ProgramOutputVerifier {
 
 #[derive(Debug, Clone)]
 enum BlockWitness {
-    ExecutionOnly(StatelessValidationFixture<FlatExecutionWitness>),
     FullValidation(StatelessValidationFixture<ExecutionWitness>),
+    ExecutionOnly(StatelessValidationFixture<FlatExecutionWitness>),
+    PrePostState(StatelessValidationFixture<PrePostStateWitness>),
 }
 
 impl OutputVerifier for ProgramOutputVerifier {
@@ -170,32 +187,16 @@ impl OutputVerifier for ProgramOutputVerifier {
                 Ok(OutputVerifierResult::Match)
             }
             BlockWitness::ExecutionOnly(bw) => {
-                let signers = recover_signers(bw.stateless_input.block.body.transactions.iter())
-                    .map_err(|e| anyhow::anyhow!("Failed to recover signers: {}", e))?;
-                let genesis = Genesis {
-                    config: bw.stateless_input.chain_config.clone(),
-                    ..Default::default()
-                };
-                let chain_spec: Arc<ChainSpec> = Arc::new(genesis.into());
-                let evm_config = EthEvmConfig::new(chain_spec.clone());
-
-                let (_, output) = stateless_validation_with_flatdb(
-                    bw.stateless_input.block.clone(),
-                    signers,
-                    bw.stateless_input.witness.clone(),
-                    chain_spec,
-                    evm_config,
-                )
-                .map_err(|e| anyhow::anyhow!("Raw stateless validation execution failed: {}", e))?;
-                let post_state =
-                    HashedPostState::from_bundle_state::<KeccakKeyHasher>(&output.state.state);
-                let post_state: HashedPostStateBincode = post_state.into();
+                let post_state: HashedPostStateBincode =
+                    generate_post_state(bw.stateless_input.clone())
+                        .context("Failed to generate post state")?
+                        .into();
 
                 let block_hash = bw.stateless_input.block.hash_slow().0;
                 let parent_hash = bw.stateless_input.block.parent_hash.0;
                 let success = bw.success;
                 let flatdb_hash: [u8; 32] = Sha256::digest(bincode::serialize(
-                    &CacheBincode::from(&bw.stateless_input.witness.state),
+                    &CacheBincode::from(bw.stateless_input.witness.state.clone()),
                 )?)
                 .into();
                 let post_state_hash: [u8; 32] =
@@ -218,6 +219,7 @@ impl OutputVerifier for ProgramOutputVerifier {
 
                 Ok(OutputVerifierResult::Match)
             }
+            BlockWitness::PrePostState(stateless_validation_fixture) => todo!(),
         }
     }
 }
@@ -235,6 +237,23 @@ fn get_input_execution_only(
             .map_err(|e| anyhow::anyhow!("Reth serialization error: {e}")),
         ExecutionClient::Ethrex => {
             bail!("Ethrex client is not supported for Flat witness type")
+        }
+    }
+}
+
+fn get_input_prepost_state(
+    bw: &StatelessValidationFixture<PrePostStateWitness>,
+    el: &ExecutionClient,
+) -> Result<Vec<u8>> {
+    let si = &bw.stateless_input;
+    match el {
+        ExecutionClient::Reth => reth_guest_io::io_serde()
+            .serialize(
+                &reth_guest_io::Input::new(si.clone()).context("Failed to create Reth input")?,
+            )
+            .map_err(|e| anyhow::anyhow!("Reth serialization error: {e}")),
+        ExecutionClient::Ethrex => {
+            bail!("Ethrex client is not supported for pre-post state witness type")
         }
     }
 }

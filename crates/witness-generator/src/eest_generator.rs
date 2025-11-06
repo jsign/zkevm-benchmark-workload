@@ -12,7 +12,10 @@ use tracing::error;
 use walkdir::{DirEntry, WalkDir};
 
 use crate::{Fixture, FixtureGenerator, Result, StatelessValidationFixture, WGError, WitnessType};
-use reth_stateless::{ExecutionWitness, GenericStatelessInput, flat_witness::FlatExecutionWitness};
+use reth_stateless::{
+    ExecutionWitness, GenericStatelessInput,
+    flat_witness::{FlatExecutionWitness, PrePostStateWitness},
+};
 
 /// Witness generator that produces `BlockAndWitness` fixtures for execution-spec-test fixtures.
 #[derive(Debug, Clone, Default)]
@@ -207,6 +210,19 @@ fn gen_fixture(
             stateless_input: GenericStatelessInput::<FlatExecutionWitness> {
                 block,
                 witness: witnesses.flatdb,
+                chain_config: config,
+            },
+            success,
+        }),
+        WitnessType::PrePostStateCheck => Box::new(StatelessValidationFixture {
+            name: name.to_owned(),
+            stateless_input: GenericStatelessInput::<PrePostStateWitness> {
+                block,
+                witness: PrePostStateWitness {
+                    trie: witnesses.trie,
+                    pre_state: witnesses.flatdb.state,
+                    post_state: witnesses.post_state,
+                },
                 chain_config: config,
             },
             success,

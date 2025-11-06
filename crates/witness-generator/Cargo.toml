@@ -6,6 +6,8 @@ rust-version.workspace = true
 license.workspace = true
 
 [dependencies]
+guest-libs.workspace = true
+
 reth-stateless.workspace = true
 reth-chainspec.workspace = true
 reth-rpc-api = { workspace = true, features = ["client"] }
@@ -13,12 +15,16 @@ reth-ethereum-primitives = { workspace = true, features = [
     "serde",
     "serde-bincode-compat",
 ] }
+reth-trie-common.workspace = true
+reth-evm-ethereum.workspace = true
 ef-tests.workspace = true
 
+alloy-primitives.workspace = true
 alloy-genesis.workspace = true
 alloy-eips = { workspace = true }
 alloy-rpc-types-eth.workspace = true
 
+anyhow.workspace = true
 walkdir.workspace = true
 rayon.workspace = true
 serde.workspace = true

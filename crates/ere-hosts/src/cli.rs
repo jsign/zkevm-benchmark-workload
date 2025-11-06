@@ -81,6 +81,8 @@ pub enum StatelessValidatorMode {
     FullValidation,
     /// Validate only execution
     ExecutionOnly,
+    /// PreStateAndPostState
+    PreStateAndPostState,
 }
 
 /// Encoding formats for block encoding length program
@@ -110,7 +112,13 @@ impl ExecutionClient {
             (Self::Reth, StatelessValidatorMode::ExecutionOnly) => {
                 "stateless-validator-execution/reth"
             }
+            (Self::Reth, StatelessValidatorMode::PreStateAndPostState) => {
+                "stateless-validator-prepoststate/reth"
+            }
             (Self::Ethrex, StatelessValidatorMode::ExecutionOnly) => {
+                bail!("Ethrex client is not supported for ExecutionOnly mode")
+            }
+            (Self::Ethrex, StatelessValidatorMode::PreStateAndPostState) => {
                 bail!("Ethrex client is not supported for ExecutionOnly mode")
             }
         };
@@ -177,6 +185,7 @@ impl From<StatelessValidatorMode> for stateless_validator::StatelessValidatorMod
         match mode {
             StatelessValidatorMode::FullValidation => Self::FullValidation,
             StatelessValidatorMode::ExecutionOnly => Self::ExecutionOnly,
+            StatelessValidatorMode::PreStateAndPostState => Self::PreStateAndPostState,
         }
     }
 }

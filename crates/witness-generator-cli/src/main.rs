@@ -79,6 +79,7 @@ enum SourceCommand {
 enum WitnessType {
     FullValidation,
     ExecutionOnly,
+    PrePostStateCheck,
 }
 
 #[tokio::main]
@@ -97,6 +98,7 @@ async fn main() -> Result<()> {
     let witness_type = match cli.witness_type {
         WitnessType::FullValidation => witness_generator::WitnessType::FullValidation,
         WitnessType::ExecutionOnly => witness_generator::WitnessType::ExecutionOnly,
+        WitnessType::PrePostStateCheck => witness_generator::WitnessType::PrePostStateCheck,
     };
 
     info!("Generating fixtures...");
