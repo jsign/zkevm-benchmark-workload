@@ -46,8 +46,8 @@ pub enum StatelessValidatorMode {
     FullValidation,
     /// Validate only execution.
     ExecutionOnly,
-    /// Validate both pre-state and post-state.
-    PreStateAndPostState,
+    /// Validate only both pre-state and post-state.
+    PrePostStateCheck,
 }
 
 /// Extra information about the block being benchmarked
@@ -104,7 +104,7 @@ pub fn stateless_validator_inputs(
             }
             Ok(res)
         }
-        StatelessValidatorMode::PreStateAndPostState => {
+        StatelessValidatorMode::PrePostStateCheck => {
             let mut res = vec![];
             let witnesses = read_benchmark_fixtures_folder(input_folder)?;
             for bw in &witnesses {
@@ -113,7 +113,7 @@ pub fn stateless_validator_inputs(
                     block_used_gas: bw.stateless_input.block.gas_used,
                 };
                 let output = ProgramOutputVerifier {
-                    bw: BlockWitness::PrePostState(bw.clone()),
+                    bw: BlockWitness::PrePostStateCheck(bw.clone()),
                 };
                 res.push(GuestIO {
                     name: bw.name.clone(),
@@ -164,7 +164,7 @@ pub struct ProgramOutputVerifier {
 enum BlockWitness {
     FullValidation(StatelessValidationFixture<ExecutionWitness>),
     ExecutionOnly(StatelessValidationFixture<FlatExecutionWitness>),
-    PrePostState(StatelessValidationFixture<PrePostStateWitness>),
+    PrePostStateCheck(StatelessValidationFixture<PrePostStateWitness>),
 }
 
 impl OutputVerifier for ProgramOutputVerifier {
@@ -219,7 +219,35 @@ impl OutputVerifier for ProgramOutputVerifier {
 
                 Ok(OutputVerifierResult::Match)
             }
-            BlockWitness::PrePostState(stateless_validation_fixture) => todo!(),
+            BlockWitness::PrePostStateCheck(bw) => {
+                let block_hash = bw.stateless_input.block.hash_slow().0;
+                let parent_hash = bw.stateless_input.block.parent_hash.0;
+                let success = bw.success;
+                let flatdb_hash: [u8; 32] = Sha256::digest(bincode::serialize(
+                    &CacheBincode::from(bw.stateless_input.witness.pre_state.clone()),
+                )?)
+                .into();
+                let post_state_hash: [u8; 32] =
+                    Sha256::digest(bincode::serialize(&bw.stateless_input.witness.post_state)?)
+                        .into();
+
+                let public_inputs = (
+                    block_hash,
+                    parent_hash,
+                    flatdb_hash,
+                    post_state_hash,
+                    success,
+                );
+                let public_inputs_hash = Sha256::digest(bincode::serialize(&public_inputs)?);
+
+                if public_inputs_hash.as_slice() != bytes {
+                    return Ok(OutputVerifierResult::Mismatch(format!(
+                "Public inputs hash mismatch: expected {public_inputs_hash:?}, got {bytes:?}"
+            )));
+                }
+
+                Ok(OutputVerifierResult::Match)
+            }
         }
     }
 }

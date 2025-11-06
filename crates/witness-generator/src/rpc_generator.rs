@@ -5,7 +5,6 @@ use alloy_eips::BlockNumberOrTag;
 use alloy_genesis::{ChainConfig, Genesis};
 use alloy_primitives::B256;
 use alloy_rpc_types_eth::{Block, Header, Receipt, Transaction, TransactionRequest};
-use anyhow::Context;
 use async_trait::async_trait;
 use guest_libs::senders::recover_signers;
 use http::{HeaderName, HeaderValue};
@@ -18,8 +17,8 @@ use reth_ethereum_primitives::TransactionSigned;
 use reth_evm_ethereum::EthEvmConfig;
 use reth_rpc_api::{DebugApiClient, EthApiClient};
 use reth_stateless::{
-    GenericStatelessInput, StatelessInput,
-    flat_witness::{self, FlatExecutionWitness, PrePostStateWitness},
+    GenericStatelessInput,
+    flat_witness::{FlatExecutionWitness, PrePostStateWitness},
     validation::stateless_validation_with_flatdb,
 };
 use reth_trie_common::{HashedPostState, KeccakKeyHasher};

@@ -11,19 +11,20 @@ use reth_primitives_traits::Block;
 use reth_stateless::{
     Genesis,
     flat_witness::{
-        FlatExecutionWitness,
+        PrePostStateWitness,
         bincode::{CacheBincode, HashedPostStateBincode},
     },
-    validation::stateless_validation_with_flatdb,
+    validation::stateless_validation_flatdb_storage_check,
 };
 use reth_trie_common::{HashedPostState, KeccakKeyHasher};
+use sparsestate::SparseState;
 
 use crate::sdk::{SDK, ScopeMarker};
 
 /// Main entry point for the guest program.
 pub fn ethereum_guest<S: SDK>() {
     S::cycle_scope(ScopeMarker::Start, "read_input");
-    let input: Input<FlatExecutionWitness> = io_serde()
+    let input: Input<PrePostStateWitness> = io_serde()
         .deserialize(&S::read_input())
         .expect("Failed to read input");
 
@@ -44,7 +45,7 @@ pub fn ethereum_guest<S: SDK>() {
         "public_inputs_preparation_flatdb_serialization",
     );
     let flatdb_serialized = bincode_v2::serde::encode_to_vec(
-        CacheBincode::from(input.stateless_input.witness.state.clone()),
+        CacheBincode::from(input.stateless_input.witness.pre_state.clone()),
         bincode_v2::config::legacy(),
     )
     .unwrap();
@@ -58,49 +59,39 @@ pub fn ethereum_guest<S: SDK>() {
     );
     let flatdb_hash: [u8; 32] = Sha256::digest(flatdb_serialized).into();
     S::cycle_scope(ScopeMarker::End, "public_inputs_preparation_flatdb_hashing");
+    S::cycle_scope(
+        ScopeMarker::Start,
+        "public_inputs_preparation_poststate_serialization",
+    );
+    let post_state_bincode: HashedPostStateBincode =
+        input.stateless_input.witness.post_state.clone().into();
+    let post_state_serialized =
+        bincode_v2::serde::encode_to_vec(post_state_bincode, bincode_v2::config::legacy()).unwrap();
+    S::cycle_scope(
+        ScopeMarker::End,
+        "public_inputs_preparation_poststate_serialization",
+    );
+    S::cycle_scope(
+        ScopeMarker::Start,
+        "public_inputs_preparation_poststate_hashing",
+    );
+    let post_state_hash: [u8; 32] = Sha256::digest(post_state_serialized).into();
+    S::cycle_scope(
+        ScopeMarker::End,
+        "public_inputs_preparation_poststate_hashing",
+    );
 
     S::cycle_scope(ScopeMarker::Start, "validation");
-    let res = stateless_validation_with_flatdb::<_, _>(
+    let res = stateless_validation_flatdb_storage_check::<SparseState>(
         input.stateless_input.block,
-        input.public_keys,
-        input.stateless_input.witness,
-        chain_spec,
-        evm_config,
+        input.stateless_input.witness.trie,
+        input.stateless_input.witness.pre_state,
+        input.stateless_input.witness.post_state,
     );
     S::cycle_scope(ScopeMarker::End, "validation");
 
     match res {
-        Ok((block_hash, output)) => {
-            S::cycle_scope(
-                ScopeMarker::Start,
-                "public_inputs_preparation_poststate_generation",
-            );
-            let post_state: HashedPostStateBincode =
-                HashedPostState::from_bundle_state::<KeccakKeyHasher>(&output.state.state).into();
-            S::cycle_scope(
-                ScopeMarker::End,
-                "public_inputs_preparation_poststate_generation",
-            );
-            S::cycle_scope(
-                ScopeMarker::Start,
-                "public_inputs_preparation_poststate_serialization",
-            );
-            let post_state_serialized =
-                bincode_v2::serde::encode_to_vec(post_state, bincode_v2::config::legacy()).unwrap();
-            S::cycle_scope(
-                ScopeMarker::End,
-                "public_inputs_preparation_poststate_serialization",
-            );
-            S::cycle_scope(
-                ScopeMarker::Start,
-                "public_inputs_preparation_poststate_hashing",
-            );
-            let post_state_hash: [u8; 32] = Sha256::digest(post_state_serialized).into();
-            S::cycle_scope(
-                ScopeMarker::End,
-                "public_inputs_preparation_poststate_hashing",
-            );
-
+        Ok(block_hash) => {
             S::cycle_scope(ScopeMarker::Start, "commit_public_inputs");
             let public_inputs = (
                 block_hash.0,

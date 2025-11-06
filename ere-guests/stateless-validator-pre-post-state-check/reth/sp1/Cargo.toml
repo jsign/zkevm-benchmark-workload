@@ -1,5 +1,5 @@
 [package]
-name = "reth-sp1-stateless-validator-only-execution"
+name = "reth-sp1-stateless-validator-pre-post-state-check"
 version = "0.1.0"
 edition = "2024"
 rust-version = "1.85"
