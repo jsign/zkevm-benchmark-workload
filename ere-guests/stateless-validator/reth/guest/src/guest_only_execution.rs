@@ -73,15 +73,29 @@ pub fn ethereum_guest<S: SDK>() {
         Ok((block_hash, output)) => {
             S::cycle_scope(
                 ScopeMarker::Start,
+                "public_inputs_preparation_poststate_generation",
+            );
+            let post_state: HashedPostStateBincode =
+                HashedPostState::from_bundle_state::<KeccakKeyHasher>(&output.state.state).into();
+            S::cycle_scope(
+                ScopeMarker::End,
+                "public_inputs_preparation_poststate_generation",
+            );
+            S::cycle_scope(
+                ScopeMarker::Start,
+                "public_inputs_preparation_poststate_serialization",
+            );
+            let poststate_serialized =
+                bincode_v2::serde::encode_to_vec(post_state, bincode_v2::config::legacy()).unwrap();
+            S::cycle_scope(
+                ScopeMarker::End,
+                "public_inputs_preparation_poststate_serialization",
+            );
+            S::cycle_scope(
+                ScopeMarker::Start,
                 "public_inputs_preparation_poststate_hashing",
             );
-            let post_state =
-                HashedPostState::from_bundle_state::<KeccakKeyHasher>(&output.state.state);
-            let post_state: HashedPostStateBincode = post_state.into();
-            let post_state_hash: [u8; 32] = Sha256::digest(
-                bincode_v2::serde::encode_to_vec(post_state, bincode_v2::config::legacy()).unwrap(),
-            )
-            .into();
+            let post_state_hash: [u8; 32] = Sha256::digest(poststate_serialized).into();
             S::cycle_scope(
                 ScopeMarker::End,
                 "public_inputs_preparation_poststate_hashing",

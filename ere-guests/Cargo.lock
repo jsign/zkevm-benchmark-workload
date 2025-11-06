@@ -4686,7 +4686,7 @@ dependencies = [
 [[package]]
 name = "reth-chainspec"
 version = "1.8.3"
-source = "git+https://github.com/jsign/reth?rev=e7661c677b2ec8bb85e23c3fc1b377f8396023e6#e7661c677b2ec8bb85e23c3fc1b377f8396023e6"
+source = "git+https://github.com/jsign/reth?rev=0ca6cd2cfb7b4783ef2b5c90f4c4db4cef32c7cf#0ca6cd2cfb7b4783ef2b5c90f4c4db4cef32c7cf"
 dependencies = [
  "alloy-chains",
  "alloy-consensus",
@@ -4706,7 +4706,7 @@ dependencies = [
 [[package]]
 name = "reth-codecs"
 version = "1.8.3"
-source = "git+https://github.com/jsign/reth?rev=e7661c677b2ec8bb85e23c3fc1b377f8396023e6#e7661c677b2ec8bb85e23c3fc1b377f8396023e6"
+source = "git+https://github.com/jsign/reth?rev=0ca6cd2cfb7b4783ef2b5c90f4c4db4cef32c7cf#0ca6cd2cfb7b4783ef2b5c90f4c4db4cef32c7cf"
 dependencies = [
  "alloy-consensus",
  "alloy-eips",
@@ -4724,7 +4724,7 @@ dependencies = [
 [[package]]
 name = "reth-codecs-derive"
 version = "1.8.3"
-source = "git+https://github.com/jsign/reth?rev=e7661c677b2ec8bb85e23c3fc1b377f8396023e6#e7661c677b2ec8bb85e23c3fc1b377f8396023e6"
+source = "git+https://github.com/jsign/reth?rev=0ca6cd2cfb7b4783ef2b5c90f4c4db4cef32c7cf#0ca6cd2cfb7b4783ef2b5c90f4c4db4cef32c7cf"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -4734,7 +4734,7 @@ dependencies = [
 [[package]]
 name = "reth-consensus"
 version = "1.8.3"
-source = "git+https://github.com/jsign/reth?rev=e7661c677b2ec8bb85e23c3fc1b377f8396023e6#e7661c677b2ec8bb85e23c3fc1b377f8396023e6"
+source = "git+https://github.com/jsign/reth?rev=0ca6cd2cfb7b4783ef2b5c90f4c4db4cef32c7cf#0ca6cd2cfb7b4783ef2b5c90f4c4db4cef32c7cf"
 dependencies = [
  "alloy-consensus",
  "alloy-primitives",
@@ -4747,7 +4747,7 @@ dependencies = [
 [[package]]
 name = "reth-consensus-common"
 version = "1.8.3"
-source = "git+https://github.com/jsign/reth?rev=e7661c677b2ec8bb85e23c3fc1b377f8396023e6#e7661c677b2ec8bb85e23c3fc1b377f8396023e6"
+source = "git+https://github.com/jsign/reth?rev=0ca6cd2cfb7b4783ef2b5c90f4c4db4cef32c7cf#0ca6cd2cfb7b4783ef2b5c90f4c4db4cef32c7cf"
 dependencies = [
  "alloy-consensus",
  "alloy-eips",
@@ -4769,7 +4769,7 @@ dependencies = [
 [[package]]
 name = "reth-db-models"
 version = "1.8.3"
-source = "git+https://github.com/jsign/reth?rev=e7661c677b2ec8bb85e23c3fc1b377f8396023e6#e7661c677b2ec8bb85e23c3fc1b377f8396023e6"
+source = "git+https://github.com/jsign/reth?rev=0ca6cd2cfb7b4783ef2b5c90f4c4db4cef32c7cf#0ca6cd2cfb7b4783ef2b5c90f4c4db4cef32c7cf"
 dependencies = [
  "alloy-eips",
  "alloy-primitives",
@@ -4782,7 +4782,7 @@ dependencies = [
 [[package]]
 name = "reth-errors"
 version = "1.8.3"
-source = "git+https://github.com/jsign/reth?rev=e7661c677b2ec8bb85e23c3fc1b377f8396023e6#e7661c677b2ec8bb85e23c3fc1b377f8396023e6"
+source = "git+https://github.com/jsign/reth?rev=0ca6cd2cfb7b4783ef2b5c90f4c4db4cef32c7cf#0ca6cd2cfb7b4783ef2b5c90f4c4db4cef32c7cf"
 dependencies = [
  "reth-consensus",
  "reth-execution-errors",
@@ -4793,7 +4793,7 @@ dependencies = [
 [[package]]
 name = "reth-ethereum-consensus"
 version = "1.8.3"
-source = "git+https://github.com/jsign/reth?rev=e7661c677b2ec8bb85e23c3fc1b377f8396023e6#e7661c677b2ec8bb85e23c3fc1b377f8396023e6"
+source = "git+https://github.com/jsign/reth?rev=0ca6cd2cfb7b4783ef2b5c90f4c4db4cef32c7cf#0ca6cd2cfb7b4783ef2b5c90f4c4db4cef32c7cf"
 dependencies = [
  "alloy-consensus",
  "alloy-eips",
@@ -4821,7 +4821,7 @@ dependencies = [
 [[package]]
 name = "reth-ethereum-forks"
 version = "1.8.3"
-source = "git+https://github.com/jsign/reth?rev=e7661c677b2ec8bb85e23c3fc1b377f8396023e6#e7661c677b2ec8bb85e23c3fc1b377f8396023e6"
+source = "git+https://github.com/jsign/reth?rev=0ca6cd2cfb7b4783ef2b5c90f4c4db4cef32c7cf#0ca6cd2cfb7b4783ef2b5c90f4c4db4cef32c7cf"
 dependencies = [
  "alloy-eip2124",
  "alloy-hardforks",
@@ -4845,7 +4845,7 @@ dependencies = [
 [[package]]
 name = "reth-ethereum-primitives"
 version = "1.8.3"
-source = "git+https://github.com/jsign/reth?rev=e7661c677b2ec8bb85e23c3fc1b377f8396023e6#e7661c677b2ec8bb85e23c3fc1b377f8396023e6"
+source = "git+https://github.com/jsign/reth?rev=0ca6cd2cfb7b4783ef2b5c90f4c4db4cef32c7cf#0ca6cd2cfb7b4783ef2b5c90f4c4db4cef32c7cf"
 dependencies = [
  "alloy-consensus",
  "alloy-eips",
@@ -4862,7 +4862,7 @@ dependencies = [
 [[package]]
 name = "reth-evm"
 version = "1.8.3"
-source = "git+https://github.com/jsign/reth?rev=e7661c677b2ec8bb85e23c3fc1b377f8396023e6#e7661c677b2ec8bb85e23c3fc1b377f8396023e6"
+source = "git+https://github.com/jsign/reth?rev=0ca6cd2cfb7b4783ef2b5c90f4c4db4cef32c7cf#0ca6cd2cfb7b4783ef2b5c90f4c4db4cef32c7cf"
 dependencies = [
  "alloy-consensus",
  "alloy-eips",
@@ -4883,7 +4883,7 @@ dependencies = [
 [[package]]
 name = "reth-evm-ethereum"
 version = "1.8.3"
-source = "git+https://github.com/jsign/reth?rev=e7661c677b2ec8bb85e23c3fc1b377f8396023e6#e7661c677b2ec8bb85e23c3fc1b377f8396023e6"
+source = "git+https://github.com/jsign/reth?rev=0ca6cd2cfb7b4783ef2b5c90f4c4db4cef32c7cf#0ca6cd2cfb7b4783ef2b5c90f4c4db4cef32c7cf"
 dependencies = [
  "alloy-consensus",
  "alloy-eips",
@@ -4903,7 +4903,7 @@ dependencies = [
 [[package]]
 name = "reth-execution-errors"
 version = "1.8.3"
-source = "git+https://github.com/jsign/reth?rev=e7661c677b2ec8bb85e23c3fc1b377f8396023e6#e7661c677b2ec8bb85e23c3fc1b377f8396023e6"
+source = "git+https://github.com/jsign/reth?rev=0ca6cd2cfb7b4783ef2b5c90f4c4db4cef32c7cf#0ca6cd2cfb7b4783ef2b5c90f4c4db4cef32c7cf"
 dependencies = [
  "alloy-evm 0.23.0",
  "alloy-primitives",
@@ -4932,7 +4932,7 @@ dependencies = [
 [[package]]
 name = "reth-execution-types"
 version = "1.8.3"
-source = "git+https://github.com/jsign/reth?rev=e7661c677b2ec8bb85e23c3fc1b377f8396023e6#e7661c677b2ec8bb85e23c3fc1b377f8396023e6"
+source = "git+https://github.com/jsign/reth?rev=0ca6cd2cfb7b4783ef2b5c90f4c4db4cef32c7cf#0ca6cd2cfb7b4783ef2b5c90f4c4db4cef32c7cf"
 dependencies = [
  "alloy-consensus",
  "alloy-eips",
@@ -4994,7 +4994,7 @@ dependencies = [
 [[package]]
 name = "reth-network-peers"
 version = "1.8.3"
-source = "git+https://github.com/jsign/reth?rev=e7661c677b2ec8bb85e23c3fc1b377f8396023e6#e7661c677b2ec8bb85e23c3fc1b377f8396023e6"
+source = "git+https://github.com/jsign/reth?rev=0ca6cd2cfb7b4783ef2b5c90f4c4db4cef32c7cf#0ca6cd2cfb7b4783ef2b5c90f4c4db4cef32c7cf"
 dependencies = [
  "alloy-primitives",
  "alloy-rlp",
@@ -5062,7 +5062,7 @@ dependencies = [
 [[package]]
 name = "reth-primitives-traits"
 version = "1.8.3"
-source = "git+https://github.com/jsign/reth?rev=e7661c677b2ec8bb85e23c3fc1b377f8396023e6#e7661c677b2ec8bb85e23c3fc1b377f8396023e6"
+source = "git+https://github.com/jsign/reth?rev=0ca6cd2cfb7b4783ef2b5c90f4c4db4cef32c7cf#0ca6cd2cfb7b4783ef2b5c90f4c4db4cef32c7cf"
 dependencies = [
  "alloy-consensus",
  "alloy-eips",
@@ -5099,7 +5099,7 @@ dependencies = [
 [[package]]
 name = "reth-prune-types"
 version = "1.8.3"
-source = "git+https://github.com/jsign/reth?rev=e7661c677b2ec8bb85e23c3fc1b377f8396023e6#e7661c677b2ec8bb85e23c3fc1b377f8396023e6"
+source = "git+https://github.com/jsign/reth?rev=0ca6cd2cfb7b4783ef2b5c90f4c4db4cef32c7cf#0ca6cd2cfb7b4783ef2b5c90f4c4db4cef32c7cf"
 dependencies = [
  "alloy-primitives",
  "derive_more 2.0.1",
@@ -5124,7 +5124,7 @@ dependencies = [
 [[package]]
 name = "reth-revm"
 version = "1.8.3"
-source = "git+https://github.com/jsign/reth?rev=e7661c677b2ec8bb85e23c3fc1b377f8396023e6#e7661c677b2ec8bb85e23c3fc1b377f8396023e6"
+source = "git+https://github.com/jsign/reth?rev=0ca6cd2cfb7b4783ef2b5c90f4c4db4cef32c7cf#0ca6cd2cfb7b4783ef2b5c90f4c4db4cef32c7cf"
 dependencies = [
  "alloy-primitives",
  "reth-execution-types 1.8.3",
@@ -5196,7 +5196,7 @@ dependencies = [
 [[package]]
 name = "reth-stages-types"
 version = "1.8.3"
-source = "git+https://github.com/jsign/reth?rev=e7661c677b2ec8bb85e23c3fc1b377f8396023e6#e7661c677b2ec8bb85e23c3fc1b377f8396023e6"
+source = "git+https://github.com/jsign/reth?rev=0ca6cd2cfb7b4783ef2b5c90f4c4db4cef32c7cf#0ca6cd2cfb7b4783ef2b5c90f4c4db4cef32c7cf"
 dependencies = [
  "alloy-primitives",
  "bytes",
@@ -5208,7 +5208,7 @@ dependencies = [
 [[package]]
 name = "reth-stateless"
 version = "1.8.3"
-source = "git+https://github.com/jsign/reth?rev=e7661c677b2ec8bb85e23c3fc1b377f8396023e6#e7661c677b2ec8bb85e23c3fc1b377f8396023e6"
+source = "git+https://github.com/jsign/reth?rev=0ca6cd2cfb7b4783ef2b5c90f4c4db4cef32c7cf#0ca6cd2cfb7b4783ef2b5c90f4c4db4cef32c7cf"
 dependencies = [
  "alloy-consensus",
  "alloy-genesis",
@@ -5249,7 +5249,7 @@ dependencies = [
 [[package]]
 name = "reth-static-file-types"
 version = "1.8.3"
-source = "git+https://github.com/jsign/reth?rev=e7661c677b2ec8bb85e23c3fc1b377f8396023e6#e7661c677b2ec8bb85e23c3fc1b377f8396023e6"
+source = "git+https://github.com/jsign/reth?rev=0ca6cd2cfb7b4783ef2b5c90f4c4db4cef32c7cf#0ca6cd2cfb7b4783ef2b5c90f4c4db4cef32c7cf"
 dependencies = [
  "alloy-primitives",
  "derive_more 2.0.1",
@@ -5282,7 +5282,7 @@ dependencies = [
 [[package]]
 name = "reth-storage-api"
 version = "1.8.3"
-source = "git+https://github.com/jsign/reth?rev=e7661c677b2ec8bb85e23c3fc1b377f8396023e6#e7661c677b2ec8bb85e23c3fc1b377f8396023e6"
+source = "git+https://github.com/jsign/reth?rev=0ca6cd2cfb7b4783ef2b5c90f4c4db4cef32c7cf#0ca6cd2cfb7b4783ef2b5c90f4c4db4cef32c7cf"
 dependencies = [
  "alloy-consensus",
  "alloy-eips",
@@ -5320,7 +5320,7 @@ dependencies = [
 [[package]]
 name = "reth-storage-errors"
 version = "1.8.3"
-source = "git+https://github.com/jsign/reth?rev=e7661c677b2ec8bb85e23c3fc1b377f8396023e6#e7661c677b2ec8bb85e23c3fc1b377f8396023e6"
+source = "git+https://github.com/jsign/reth?rev=0ca6cd2cfb7b4783ef2b5c90f4c4db4cef32c7cf#0ca6cd2cfb7b4783ef2b5c90f4c4db4cef32c7cf"
 dependencies = [
  "alloy-eips",
  "alloy-primitives",
@@ -5336,7 +5336,7 @@ dependencies = [
 [[package]]
 name = "reth-trie"
 version = "1.8.3"
-source = "git+https://github.com/jsign/reth?rev=e7661c677b2ec8bb85e23c3fc1b377f8396023e6#e7661c677b2ec8bb85e23c3fc1b377f8396023e6"
+source = "git+https://github.com/jsign/reth?rev=0ca6cd2cfb7b4783ef2b5c90f4c4db4cef32c7cf#0ca6cd2cfb7b4783ef2b5c90f4c4db4cef32c7cf"
 dependencies = [
  "alloy-consensus",
  "alloy-eips",
@@ -5358,7 +5358,7 @@ dependencies = [
 [[package]]
 name = "reth-trie-common"
 version = "1.8.3"
-source = "git+https://github.com/jsign/reth?rev=e7661c677b2ec8bb85e23c3fc1b377f8396023e6#e7661c677b2ec8bb85e23c3fc1b377f8396023e6"
+source = "git+https://github.com/jsign/reth?rev=0ca6cd2cfb7b4783ef2b5c90f4c4db4cef32c7cf#0ca6cd2cfb7b4783ef2b5c90f4c4db4cef32c7cf"
 dependencies = [
  "alloy-consensus",
  "alloy-primitives",
@@ -5380,7 +5380,7 @@ dependencies = [
 [[package]]
 name = "reth-trie-sparse"
 version = "1.8.3"
-source = "git+https://github.com/jsign/reth?rev=e7661c677b2ec8bb85e23c3fc1b377f8396023e6#e7661c677b2ec8bb85e23c3fc1b377f8396023e6"
+source = "git+https://github.com/jsign/reth?rev=0ca6cd2cfb7b4783ef2b5c90f4c4db4cef32c7cf#0ca6cd2cfb7b4783ef2b5c90f4c4db4cef32c7cf"
 dependencies = [
  "alloy-primitives",
  "alloy-rlp",
@@ -5413,7 +5413,7 @@ dependencies = [
 [[package]]
 name = "reth-zstd-compressors"
 version = "1.8.3"
-source = "git+https://github.com/jsign/reth?rev=e7661c677b2ec8bb85e23c3fc1b377f8396023e6#e7661c677b2ec8bb85e23c3fc1b377f8396023e6"
+source = "git+https://github.com/jsign/reth?rev=0ca6cd2cfb7b4783ef2b5c90f4c4db4cef32c7cf#0ca6cd2cfb7b4783ef2b5c90f4c4db4cef32c7cf"
 dependencies = [
  "zstd",
 ]
