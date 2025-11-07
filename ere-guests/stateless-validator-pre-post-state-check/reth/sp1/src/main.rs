@@ -5,8 +5,8 @@
 extern crate alloc;
 
 use reth_guest::{
-    guest_only_execution::ethereum_guest,
-    sdk::{ScopeMarker, SDK},
+    guest_pre_post_state_check::ethereum_guest,
+    sdk::{SDK, ScopeMarker},
 };
 use sp1_zkvm::io::read_vec;
 use tracing_subscriber::fmt;

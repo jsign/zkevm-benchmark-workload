@@ -113,13 +113,13 @@ impl ExecutionClient {
                 "stateless-validator-execution/reth"
             }
             (Self::Reth, StatelessValidatorMode::PrePostStateCheck) => {
-                "stateless-validator-prepoststate/reth"
+                "stateless-validator-pre-post-state-check/reth"
             }
-            (Self::Ethrex, StatelessValidatorMode::ExecutionOnly) => {
-                bail!("Ethrex client is not supported for ExecutionOnly mode")
-            }
-            (Self::Ethrex, StatelessValidatorMode::PrePostStateCheck) => {
-                bail!("Ethrex client is not supported for ExecutionOnly mode")
+            (
+                Self::Ethrex,
+                StatelessValidatorMode::ExecutionOnly | StatelessValidatorMode::PrePostStateCheck,
+            ) => {
+                bail!("Ethrex client is not supported for ExecutionOnly or PrePostStateCheck mode")
             }
         };
         Ok(PathBuf::from_str(path).unwrap())

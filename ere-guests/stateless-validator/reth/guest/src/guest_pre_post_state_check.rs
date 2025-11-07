@@ -1,22 +1,16 @@
 //! Abstracted guest program
 
-use alloc::sync::Arc;
-
 use ere_io_serde::IoSerde;
 use k256::sha2::{Digest, Sha256};
-use reth_chainspec::ChainSpec;
-use reth_evm_ethereum::EthEvmConfig;
 use reth_guest_io::{Input, io_serde};
 use reth_primitives_traits::Block;
 use reth_stateless::{
-    Genesis,
     flat_witness::{
         PrePostStateWitness,
         bincode::{CacheBincode, HashedPostStateBincode},
     },
     validation::stateless_validation_flatdb_storage_check,
 };
-use reth_trie_common::{HashedPostState, KeccakKeyHasher};
 use sparsestate::SparseState;
 
 use crate::sdk::{SDK, ScopeMarker};
@@ -28,12 +22,6 @@ pub fn ethereum_guest<S: SDK>() {
         .deserialize(&S::read_input())
         .expect("Failed to read input");
 
-    let genesis = Genesis {
-        config: input.stateless_input.chain_config.clone(),
-        ..Default::default()
-    };
-    let chain_spec: Arc<ChainSpec> = Arc::new(genesis.into());
-    let evm_config = EthEvmConfig::new(chain_spec.clone());
     S::cycle_scope(ScopeMarker::End, "read_input");
 
     S::cycle_scope(ScopeMarker::Start, "public_inputs_preparation_base");
@@ -109,7 +97,13 @@ pub fn ethereum_guest<S: SDK>() {
             S::cycle_scope(ScopeMarker::End, "commit_public_inputs");
         }
         Err(_err) => {
-            let public_inputs = (header.hash_slow().0, parent_hash.0, flatdb_hash, false);
+            let public_inputs = (
+                header.hash_slow().0,
+                parent_hash.0,
+                flatdb_hash,
+                post_state_hash,
+                false,
+            );
             let public_inputs_hash: [u8; 32] = Sha256::digest(
                 bincode_v2::serde::encode_to_vec(public_inputs, bincode_v2::config::legacy())
                     .unwrap(),

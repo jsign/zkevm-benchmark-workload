@@ -108,7 +108,7 @@ pub fn stateless_validator_inputs(
             let mut res = vec![];
             let witnesses = read_benchmark_fixtures_folder(input_folder)?;
             for bw in &witnesses {
-                let input = get_input_prepost_state(bw, &el)?;
+                let input = get_input_pre_post_state_check(bw, &el)?;
                 let metadata = BlockMetadata {
                     block_used_gas: bw.stateless_input.block.gas_used,
                 };
@@ -227,9 +227,10 @@ impl OutputVerifier for ProgramOutputVerifier {
                     &CacheBincode::from(bw.stateless_input.witness.pre_state.clone()),
                 )?)
                 .into();
-                let post_state_hash: [u8; 32] =
-                    Sha256::digest(bincode::serialize(&bw.stateless_input.witness.post_state)?)
-                        .into();
+                let post_state_hash: [u8; 32] = Sha256::digest(bincode::serialize(
+                    &HashedPostStateBincode::from(bw.stateless_input.witness.post_state.clone()),
+                )?)
+                .into();
 
                 let public_inputs = (
                     block_hash,
@@ -269,11 +270,11 @@ fn get_input_execution_only(
     }
 }
 
-fn get_input_prepost_state(
-    bw: &StatelessValidationFixture<PrePostStateWitness>,
+fn get_input_pre_post_state_check(
+    si: &StatelessValidationFixture<PrePostStateWitness>,
     el: &ExecutionClient,
 ) -> Result<Vec<u8>> {
-    let si = &bw.stateless_input;
+    let si = &si.stateless_input;
     match el {
         ExecutionClient::Reth => reth_guest_io::io_serde()
             .serialize(
