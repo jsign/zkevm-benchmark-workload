@@ -52,7 +52,7 @@ pub enum GuestProgramCommand {
         #[arg(short, long)]
         execution_client: ExecutionClient,
         /// Mode of the stateless validator
-        #[arg(short, long, default_value = "execution-and-storage")]
+        #[arg(short, long, default_value = "full-validation")]
         mode: StatelessValidatorMode,
     },
     /// Empty program
