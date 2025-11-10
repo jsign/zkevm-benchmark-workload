@@ -32,11 +32,11 @@ pub fn ethereum_guest<S: SDK>() {
         ScopeMarker::Start,
         "public_inputs_preparation_flatdb_serialization",
     );
-    let flatdb_serialized = bincode_v2::serde::encode_to_vec(
-        CacheBincode::from(input.stateless_input.witness.pre_state.clone()),
-        bincode_v2::config::legacy(),
-    )
-    .unwrap();
+    // let flatdb_serialized = bincode_v2::serde::encode_to_vec(
+    //     CacheBincode::from(input.stateless_input.witness.pre_state.clone()),
+    //     bincode_v2::config::legacy(),
+    // )
+    // .unwrap();
     S::cycle_scope(
         ScopeMarker::End,
         "public_inputs_preparation_flatdb_serialization",
@@ -45,16 +45,16 @@ pub fn ethereum_guest<S: SDK>() {
         ScopeMarker::Start,
         "public_inputs_preparation_flatdb_hashing",
     );
-    let flatdb_hash: [u8; 32] = Sha256::digest(flatdb_serialized).into();
+    // let flatdb_hash: [u8; 32] = Sha256::digest(flatdb_serialized).into();
     S::cycle_scope(ScopeMarker::End, "public_inputs_preparation_flatdb_hashing");
     S::cycle_scope(
         ScopeMarker::Start,
         "public_inputs_preparation_poststate_serialization",
     );
-    let post_state_bincode: HashedPostStateBincode =
-        input.stateless_input.witness.post_state.clone().into();
-    let post_state_serialized =
-        bincode_v2::serde::encode_to_vec(post_state_bincode, bincode_v2::config::legacy()).unwrap();
+    // let post_state_bincode: HashedPostStateBincode =
+    //     input.stateless_input.witness.post_state.clone().into();
+    // let post_state_serialized =
+    //     bincode_v2::serde::encode_to_vec(post_state_bincode, bincode_v2::config::legacy()).unwrap();
     S::cycle_scope(
         ScopeMarker::End,
         "public_inputs_preparation_poststate_serialization",
@@ -63,7 +63,7 @@ pub fn ethereum_guest<S: SDK>() {
         ScopeMarker::Start,
         "public_inputs_preparation_poststate_hashing",
     );
-    let post_state_hash: [u8; 32] = Sha256::digest(post_state_serialized).into();
+    // let post_state_hash: [u8; 32] = Sha256::digest(post_state_serialized).into();
     S::cycle_scope(
         ScopeMarker::End,
         "public_inputs_preparation_poststate_hashing",
@@ -84,8 +84,8 @@ pub fn ethereum_guest<S: SDK>() {
             let public_inputs = (
                 block_hash.0,
                 parent_hash.0,
-                flatdb_hash,
-                post_state_hash,
+                // flatdb_hash,
+                // post_state_hash,
                 true,
             );
             let public_inputs_hash: [u8; 32] = Sha256::digest(
@@ -100,8 +100,8 @@ pub fn ethereum_guest<S: SDK>() {
             let public_inputs = (
                 header.hash_slow().0,
                 parent_hash.0,
-                flatdb_hash,
-                post_state_hash,
+                // flatdb_hash,
+                // post_state_hash,
                 false,
             );
             let public_inputs_hash: [u8; 32] = Sha256::digest(

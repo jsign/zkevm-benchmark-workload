@@ -160,13 +160,13 @@ openvm-revm-crypto = { git = "https://github.com/axiom-crypto/openvm-reth-benchm
 
 # branch is kw/zkevm-benchmark-workload-repo
 # NOTE: We are using a branch of a branch that has not yet been merged into master.
-reth-ethereum-primitives = { git = "https://github.com/jsign/reth", rev = "63f820ef2f88f2716d6a3e4b6d9e1f6ce01768ac", default-features = false }
-reth-primitives-traits = { git = "https://github.com/jsign/reth", rev = "63f820ef2f88f2716d6a3e4b6d9e1f6ce01768ac", default-features = false }
-reth-stateless = { git = "https://github.com/jsign/reth", rev = "63f820ef2f88f2716d6a3e4b6d9e1f6ce01768ac", default-features = false }
-reth-chainspec = { git = "https://github.com/jsign/reth", rev = "63f820ef2f88f2716d6a3e4b6d9e1f6ce01768ac", default-features = false }
-reth-evm-ethereum = { git = "https://github.com/jsign/reth", rev = "63f820ef2f88f2716d6a3e4b6d9e1f6ce01768ac", default-features = false }
-reth-errors = { git = "https://github.com/jsign/reth", rev = "63f820ef2f88f2716d6a3e4b6d9e1f6ce01768ac", default-features = false }
-reth-trie-common = { git = "https://github.com/jsign/reth", rev = "63f820ef2f88f2716d6a3e4b6d9e1f6ce01768ac", default-features = false }
+reth-ethereum-primitives = { git = "https://github.com/jsign/reth", rev = "dd9f092e76ea14d166adb45ef65e0192c9b69644", default-features = false }
+reth-primitives-traits = { git = "https://github.com/jsign/reth", rev = "dd9f092e76ea14d166adb45ef65e0192c9b69644", default-features = false }
+reth-stateless = { git = "https://github.com/jsign/reth", rev = "dd9f092e76ea14d166adb45ef65e0192c9b69644", default-features = false }
+reth-chainspec = { git = "https://github.com/jsign/reth", rev = "dd9f092e76ea14d166adb45ef65e0192c9b69644", default-features = false }
+reth-evm-ethereum = { git = "https://github.com/jsign/reth", rev = "dd9f092e76ea14d166adb45ef65e0192c9b69644", default-features = false }
+reth-errors = { git = "https://github.com/jsign/reth", rev = "dd9f092e76ea14d166adb45ef65e0192c9b69644", default-features = false }
+reth-trie-common = { git = "https://github.com/jsign/reth", rev = "dd9f092e76ea14d166adb45ef65e0192c9b69644", default-features = false }
 
 
 # alloy
@@ -214,8 +214,8 @@ codegen-units = 1
 opt-level = "s"
 
 [patch."https://github.com/paradigmxyz/reth"]
-reth-stateless = { git = "https://github.com/jsign/reth", rev = "63f820ef2f88f2716d6a3e4b6d9e1f6ce01768ac" }
-reth-errors = { git = "https://github.com/jsign/reth", rev = "63f820ef2f88f2716d6a3e4b6d9e1f6ce01768ac" }
-reth-trie-common = { git = "https://github.com/jsign/reth", rev = "63f820ef2f88f2716d6a3e4b6d9e1f6ce01768ac" }
+reth-stateless = { git = "https://github.com/jsign/reth", rev = "dd9f092e76ea14d166adb45ef65e0192c9b69644" }
+reth-errors = { git = "https://github.com/jsign/reth", rev = "dd9f092e76ea14d166adb45ef65e0192c9b69644" }
+reth-trie-common = { git = "https://github.com/jsign/reth", rev = "dd9f092e76ea14d166adb45ef65e0192c9b69644" }
 
 [patch.crates-io]

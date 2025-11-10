@@ -119,15 +119,15 @@ ere-io-serde = { git = "https://github.com/eth-applied-research-group/ere", rev 
 
 # branch is kw/zkevm-benchmark-workload-repo
 # NOTE: We are using a branch of a branch that has not yet been merged into master.
-ef-tests = { git = "https://github.com/jsign/reth", rev = "63f820ef2f88f2716d6a3e4b6d9e1f6ce01768ac" }
-reth-ethereum-primitives = { git = "https://github.com/jsign/reth", rev = "63f820ef2f88f2716d6a3e4b6d9e1f6ce01768ac" }
-reth-stateless = { git = "https://github.com/jsign/reth", rev = "63f820ef2f88f2716d6a3e4b6d9e1f6ce01768ac" }
-reth-rpc-api = { git = "https://github.com/jsign/reth", rev = "63f820ef2f88f2716d6a3e4b6d9e1f6ce01768ac" }
-reth-primitives-traits = { git = "https://github.com/jsign/reth", rev = "63f820ef2f88f2716d6a3e4b6d9e1f6ce01768ac" }
-reth-errors = { git = "https://github.com/jsign/reth", rev = "63f820ef2f88f2716d6a3e4b6d9e1f6ce01768ac" }
-reth-trie-common = { git = "https://github.com/jsign/reth", rev = "63f820ef2f88f2716d6a3e4b6d9e1f6ce01768ac" }
-reth-chainspec = { git = "https://github.com/jsign/reth", rev = "63f820ef2f88f2716d6a3e4b6d9e1f6ce01768ac" }
-reth-evm-ethereum = { git = "https://github.com/jsign/reth", rev = "63f820ef2f88f2716d6a3e4b6d9e1f6ce01768ac" }
+ef-tests = { git = "https://github.com/jsign/reth", rev = "dd9f092e76ea14d166adb45ef65e0192c9b69644" }
+reth-ethereum-primitives = { git = "https://github.com/jsign/reth", rev = "dd9f092e76ea14d166adb45ef65e0192c9b69644" }
+reth-stateless = { git = "https://github.com/jsign/reth", rev = "dd9f092e76ea14d166adb45ef65e0192c9b69644" }
+reth-rpc-api = { git = "https://github.com/jsign/reth", rev = "dd9f092e76ea14d166adb45ef65e0192c9b69644" }
+reth-primitives-traits = { git = "https://github.com/jsign/reth", rev = "dd9f092e76ea14d166adb45ef65e0192c9b69644" }
+reth-errors = { git = "https://github.com/jsign/reth", rev = "dd9f092e76ea14d166adb45ef65e0192c9b69644" }
+reth-trie-common = { git = "https://github.com/jsign/reth", rev = "dd9f092e76ea14d166adb45ef65e0192c9b69644" }
+reth-chainspec = { git = "https://github.com/jsign/reth", rev = "dd9f092e76ea14d166adb45ef65e0192c9b69644" }
+reth-evm-ethereum = { git = "https://github.com/jsign/reth", rev = "dd9f092e76ea14d166adb45ef65e0192c9b69644" }
 
 
 ethrex-guest-program = { git = "https://github.com/lambdaclass/ethrex.git", tag = "v6.0.0", package = "guest_program" }

@@ -205,8 +205,8 @@ impl OutputVerifier for ProgramOutputVerifier {
                 let public_inputs = (
                     block_hash,
                     parent_hash,
-                    flatdb_hash,
-                    post_state_hash,
+                    // flatdb_hash,
+                    // post_state_hash,
                     success,
                 );
                 let public_inputs_hash = Sha256::digest(bincode::serialize(&public_inputs)?);
@@ -235,8 +235,8 @@ impl OutputVerifier for ProgramOutputVerifier {
                 let public_inputs = (
                     block_hash,
                     parent_hash,
-                    flatdb_hash,
-                    post_state_hash,
+                    // flatdb_hash,
+                    // post_state_hash,
                     success,
                 );
                 let public_inputs_hash = Sha256::digest(bincode::serialize(&public_inputs)?);
@@ -276,11 +276,13 @@ fn get_input_pre_post_state_check(
 ) -> Result<Vec<u8>> {
     let si = &si.stateless_input;
     match el {
-        ExecutionClient::Reth => reth_guest_io::io_serde()
-            .serialize(
-                &reth_guest_io::Input::new(si.clone()).context("Failed to create Reth input")?,
-            )
-            .map_err(|e| anyhow::anyhow!("Reth serialization error: {e}")),
+        ExecutionClient::Reth => {
+            let mut si = si.clone();
+            si.witness.pre_state.accounts = Default::default();
+            reth_guest_io::io_serde()
+                .serialize(&reth_guest_io::Input::new(si).context("Failed to create Reth input")?)
+                .map_err(|e| anyhow::anyhow!("Reth serialization error: {e}"))
+        }
         ExecutionClient::Ethrex => {
             bail!("Ethrex client is not supported for pre-post state witness type")
         }
