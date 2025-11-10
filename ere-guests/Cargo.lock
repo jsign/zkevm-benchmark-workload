@@ -2854,13 +2854,8 @@ dependencies = [
 
 [[package]]
 name = "lib-c"
-version = "0.12.0"
-source = "git+https://github.com/0xPolygonHermez/zisk.git?tag=v0.12.0#5104c56c4736f99e1a3e809511e41ed6306a7db5"
-
-[[package]]
-name = "lib-c"
-version = "0.12.0"
-source = "git+https://github.com/0xPolygonHermez/zisk.git#5104c56c4736f99e1a3e809511e41ed6306a7db5"
+version = "0.13.0"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?tag=v0.13.0#ea1ed4c518992a170fc59ec19f1228eb4829a9e1"
 
 [[package]]
 name = "libc"
@@ -5448,7 +5443,7 @@ dependencies = [
  "reth-stateless",
  "revm 31.0.0",
  "sha2",
- "ziskos 0.12.0 (git+https://github.com/0xPolygonHermez/zisk.git?tag=v0.12.0)",
+ "ziskos",
 ]
 
 [[package]]
@@ -5465,7 +5460,7 @@ dependencies = [
  "reth-stateless",
  "revm 31.0.0",
  "sha2",
- "ziskos 0.12.0 (git+https://github.com/0xPolygonHermez/zisk.git?tag=v0.12.0)",
+ "ziskos",
 ]
 
 [[package]]
@@ -5482,7 +5477,7 @@ dependencies = [
  "reth-stateless",
  "revm 31.0.0",
  "sha2",
- "ziskos 0.12.0 (git+https://github.com/0xPolygonHermez/zisk.git?tag=v0.12.0)",
+ "ziskos",
 ]
 
 [[package]]
@@ -7655,41 +7650,25 @@ dependencies = [
 name = "zisk-empty-program"
 version = "0.1.0"
 dependencies = [
- "ziskos 0.12.0 (git+https://github.com/0xPolygonHermez/zisk.git)",
+ "ziskos",
 ]
 
 [[package]]
 name = "zisk-panic-guest"
 version = "0.1.0"
 dependencies = [
- "ziskos 0.12.0 (git+https://github.com/0xPolygonHermez/zisk.git)",
+ "ziskos",
 ]
 
 [[package]]
 name = "ziskos"
-version = "0.12.0"
-source = "git+https://github.com/0xPolygonHermez/zisk.git?tag=v0.12.0#5104c56c4736f99e1a3e809511e41ed6306a7db5"
+version = "0.13.0"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?tag=v0.13.0#ea1ed4c518992a170fc59ec19f1228eb4829a9e1"
 dependencies = [
  "cfg-if",
  "getrandom 0.2.16",
  "lazy_static",
- "lib-c 0.12.0 (git+https://github.com/0xPolygonHermez/zisk.git?tag=v0.12.0)",
- "num-bigint 0.4.6",
- "num-traits",
- "rand 0.8.5",
- "static_assertions",
- "tiny-keccak",
-]
-
-[[package]]
-name = "ziskos"
-version = "0.12.0"
-source = "git+https://github.com/0xPolygonHermez/zisk.git#5104c56c4736f99e1a3e809511e41ed6306a7db5"
-dependencies = [
- "cfg-if",
- "getrandom 0.2.16",
- "lazy_static",
- "lib-c 0.12.0 (git+https://github.com/0xPolygonHermez/zisk.git)",
+ "lib-c",
  "num-bigint 0.4.6",
  "num-traits",
  "rand 0.8.5",

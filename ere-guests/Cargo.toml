@@ -141,7 +141,7 @@ ere-io-serde = { git = "https://github.com/eth-applied-research-group/ere", rev 
 
 sp1-zkvm = "5.0.5"
 pico-sdk = { git = "https://github.com/brevis-network/pico.git", tag = "v1.1.7" }
-ziskos = { git = "https://github.com/0xPolygonHermez/zisk.git", tag = "v0.12.0" }
+ziskos = { git = "https://github.com/0xPolygonHermez/zisk.git", tag = "v0.13.0" }
 risc0-zkvm = { version = "3.0.3", default-features = false, features = [
     "std",
     "unstable",
