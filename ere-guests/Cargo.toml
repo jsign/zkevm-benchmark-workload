@@ -13,9 +13,11 @@ members = [
 
     # Reth stateless validator only execution
     "stateless-validator-execution/reth/sp1",
+    "stateless-validator-execution/reth/zisk",
 
     # Reth stateless validator pre-post state check
     "stateless-validator-pre-post-state-check/reth/sp1",
+    "stateless-validator-pre-post-state-check/reth/zisk",
 
     # Ethrex stateless validator is not part of the workspace
 
