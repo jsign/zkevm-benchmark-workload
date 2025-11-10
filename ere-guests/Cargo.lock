@@ -1997,7 +1997,7 @@ checksum = "877a4ace8713b0bcf2a4e7eec82529c029f1d0619886d18145fea96c3ffe5c0f"
 [[package]]
 name = "ere-io-serde"
 version = "0.0.14"
-source = "git+https://github.com/eth-applied-research-group/ere?rev=5c342eec441c5d4cb3c79b57767dfc7041108189#5c342eec441c5d4cb3c79b57767dfc7041108189"
+source = "git+https://github.com/eth-applied-research-group/ere?rev=7b8bb6adcdaae68b2b3c1c410b1d3c40721a82e8#7b8bb6adcdaae68b2b3c1c410b1d3c40721a82e8"
 dependencies = [
  "bincode 2.0.1",
  "serde",
