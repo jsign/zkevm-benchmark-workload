@@ -66,6 +66,7 @@ fn main() -> Result<()> {
                 sub_folder: Some(el.as_ref().to_lowercase()),
                 action,
                 force_rerun: cli.force_rerun,
+                dump_inputs_folder: cli.dump_inputs.clone(),
             };
             for zkvm in zkvms {
                 run_benchmark(&zkvm, &config, guest_io.clone())?;
@@ -87,6 +88,7 @@ fn main() -> Result<()> {
                 sub_folder: None,
                 action,
                 force_rerun: cli.force_rerun,
+                dump_inputs_folder: cli.dump_inputs.clone(),
             };
             for zkvm in zkvms {
                 run_benchmark(&zkvm, &config, vec![guest_io.clone()])?;
@@ -120,6 +122,7 @@ fn main() -> Result<()> {
                 sub_folder: None,
                 action,
                 force_rerun: cli.force_rerun,
+                dump_inputs_folder: cli.dump_inputs.clone(),
             };
             for zkvm in zkvms {
                 run_benchmark(&zkvm, &config, guest_io.clone())?;
